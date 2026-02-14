@@ -1,0 +1,31 @@
+{
+  "title": "Reproducibility Package: A Typology of Food Security Crises — Eight Archetypes from 1,658 Episodes across 51 Countries",
+  "description": "Code and data to reproduce all analyses and figures in the paper. Reads from the Harmonized Food Insecurity Dataset (HFID v1.1.1) and generates crisis episode detection, transition matrices, archetype classification, and all publication figures.",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Choularton, Richard",
+      "affiliation": "Lund University",
+      "orcid": ""
+    }
+  ],
+  "keywords": [
+    "food security",
+    "IPC",
+    "crisis typology",
+    "food crisis archetypes",
+    "transition analysis",
+    "HFID",
+    "reproducibility"
+  ],
+  "license": "MIT",
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "",
+      "resource_type": "publication-article",
+      "scheme": "doi"
+    }
+  ],
+  "access_right": "open"
+}
