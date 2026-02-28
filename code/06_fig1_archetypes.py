@@ -57,7 +57,7 @@ plt.rcParams.update({
 # Archetype definitions
 # ============================================================
 ARCHETYPE_COLORS = {
-    'seasonal_spike': '#4477AA',
+    'seasonal_crisis': '#4477AA',
     'prolonged_moderate': '#66CCEE',
     'protracted_emergency': '#EE6677',
     'rapid_onset': '#228833',
@@ -68,12 +68,12 @@ ARCHETYPE_COLORS = {
 }
 
 ARCHETYPE_ORDER = [
-    'seasonal_spike', 'prolonged_moderate', 'protracted_emergency',
+    'seasonal_crisis', 'prolonged_moderate', 'protracted_emergency',
     'rapid_onset', 'entrenched_moderate', 'oscillating', 'severe_shock', 'escalating'
 ]
 
 ARCHETYPE_LABELS = {
-    'seasonal_spike': 'Seasonal spike',
+    'seasonal_crisis': 'Seasonal crisis',
     'prolonged_moderate': 'Prolonged moderate',
     'protracted_emergency': 'Protracted emergency',
     'rapid_onset': 'Rapid onset',

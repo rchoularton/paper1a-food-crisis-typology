@@ -290,11 +290,11 @@ def main():
     print("=" * 70)
 
     key_transitions = [
-        ('seasonal_spike', 'seasonal_spike'),
-        ('seasonal_spike', 'prolonged_moderate'),
-        ('seasonal_spike', 'protracted_emergency'),
+        ('seasonal_crisis', 'seasonal_crisis'),
+        ('seasonal_crisis', 'prolonged_moderate'),
+        ('seasonal_crisis', 'protracted_emergency'),
         ('prolonged_moderate', 'protracted_emergency'),
-        ('prolonged_moderate', 'seasonal_spike'),
+        ('prolonged_moderate', 'seasonal_crisis'),
     ]
 
     print("\nGap Statistics for Key Transition Types:")

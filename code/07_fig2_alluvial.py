@@ -79,12 +79,12 @@ ARCHETYPE_ORDER_IPC = [
     'oscillating',
     'entrenched_moderate',
     'prolonged_moderate',
-    'seasonal_spike',
+    'seasonal_crisis',
 ]
 
 # For panel (b) - mild at top, severe at bottom (stacked bars)
 ARCHETYPE_ORDER_BARS = [
-    'seasonal_spike',
+    'seasonal_crisis',
     'prolonged_moderate',
     'entrenched_moderate',
     'oscillating',
@@ -95,7 +95,7 @@ ARCHETYPE_ORDER_BARS = [
 ]
 
 ARCHETYPE_LABELS_FULL = {
-    'seasonal_spike': 'Seasonal spike',
+    'seasonal_crisis': 'Seasonal crisis',
     'prolonged_moderate': 'Prolonged moderate',
     'protracted_emergency': 'Protracted emergency',
     'rapid_onset': 'Rapid onset',
@@ -107,7 +107,7 @@ ARCHETYPE_LABELS_FULL = {
 
 # Shared colour palette (Tol Bright -- colorblind-safe)
 ARCHETYPE_COLORS = {
-    'seasonal_spike':        '#228833',
+    'seasonal_crisis':        '#228833',
     'prolonged_moderate':    '#CCBB44',
     'entrenched_moderate':   '#EE6677',
     'oscillating':           '#AA3377',
@@ -124,7 +124,7 @@ PHASE_GROUPS = {
     'Phase 4-5': ['protracted_emergency', 'severe_shock'],
     'Phase 4':   ['escalating', 'rapid_onset'],
     'Phase 3-4': ['oscillating'],
-    'Phase 3':   ['entrenched_moderate', 'prolonged_moderate', 'seasonal_spike'],
+    'Phase 3':   ['entrenched_moderate', 'prolonged_moderate', 'seasonal_crisis'],
 }
 
 PHASE_COLORS = {
@@ -162,8 +162,8 @@ def load_transition_data():
 
     # Exclude seasonal->seasonal for cleaner viz
     trans_filtered = trans_df[
-        ~((trans_df['from_archetype'] == 'seasonal_spike') &
-          (trans_df['to_archetype'] == 'seasonal_spike'))
+        ~((trans_df['from_archetype'] == 'seasonal_crisis') &
+          (trans_df['to_archetype'] == 'seasonal_crisis'))
     ]
 
     # Build transition matrix
@@ -585,7 +585,7 @@ def draw_panel_b(ax, n_cohort):
             in_cursor[(p2, a2)] = y1_top
             color = ARCHETYPE_COLORS.get(a1, '#999999')
             # Skip seasonal persistence entirely to remove green wash
-            if a1 == 'seasonal_spike':
+            if a1 == 'seasonal_crisis':
                 alpha = 0.04
             else:
                 alpha = 0.10
@@ -638,7 +638,7 @@ def draw_panel_b(ax, n_cohort):
 
         # Count labels inside blocks
         mid_y = (pos['y_bot'] + pos['y_top']) / 2
-        light_bars = {'seasonal_spike', 'prolonged_moderate'}
+        light_bars = {'seasonal_crisis', 'prolonged_moderate'}
         txt_color = '#333333' if archetype in light_bars else 'white'
         if height > total_height * 0.07:
             ax.text(pos['x'], mid_y, f"{pos['count']}",

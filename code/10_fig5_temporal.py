@@ -59,13 +59,13 @@ plt.rcParams.update({
 # Archetype definitions
 # ---------------------------------------------------------------------------
 ARCHETYPE_ORDER = [
-    'seasonal_spike', 'prolonged_moderate', 'protracted_emergency',
+    'seasonal_crisis', 'prolonged_moderate', 'protracted_emergency',
     'rapid_onset', 'entrenched_moderate', 'oscillating',
     'severe_shock', 'escalating',
 ]
 
 ARCHETYPE_LABELS = {
-    'seasonal_spike': 'Seasonal spike',
+    'seasonal_crisis': 'Seasonal crisis',
     'prolonged_moderate': 'Prolonged moderate',
     'protracted_emergency': 'Protracted emergency',
     'rapid_onset': 'Rapid onset',

@@ -75,7 +75,7 @@ plt.rcParams.update({
 # Colorblind-friendly palette matching existing figures
 # ============================================================
 ARCHETYPE_COLORS = {
-    'seasonal_spike': '#4477AA',
+    'seasonal_crisis': '#4477AA',
     'prolonged_moderate': '#66CCEE',
     'protracted_emergency': '#EE6677',
     'rapid_onset': '#228833',
@@ -86,7 +86,7 @@ ARCHETYPE_COLORS = {
 }
 
 ARCHETYPE_LABELS = {
-    'seasonal_spike': 'Seasonal\nspike',
+    'seasonal_crisis': 'Seasonal\ncrisis',
     'prolonged_moderate': 'Prolonged\nmoderate',
     'protracted_emergency': 'Protracted\nemergency',
     'rapid_onset': 'Rapid\nonset',
@@ -97,7 +97,7 @@ ARCHETYPE_LABELS = {
 }
 
 ARCHETYPE_SHORT = {
-    'seasonal_spike': 'Seasonal',
+    'seasonal_crisis': 'Seasonal',
     'prolonged_moderate': 'Prolonged',
     'protracted_emergency': 'Protracted',
     'rapid_onset': 'Rapid',
@@ -108,7 +108,7 @@ ARCHETYPE_SHORT = {
 }
 
 ARCHETYPE_FULL = {
-    'seasonal_spike': 'Seasonal spike',
+    'seasonal_crisis': 'Seasonal crisis',
     'prolonged_moderate': 'Prolonged moderate',
     'protracted_emergency': 'Protracted emergency',
     'rapid_onset': 'Rapid onset',
@@ -158,7 +158,7 @@ def load_transition_data(exclude_seasonal_only=True):
 
     Args:
         exclude_seasonal_only: If True, exclude locations that only have
-                               seasonal_spike -> seasonal_spike transitions
+                               seasonal_crisis -> seasonal_crisis transitions
     """
     trans_df = pd.read_csv(TRANSITIONS_PATH)
     episodes_df = pd.read_csv(EPISODES_PATH)
@@ -177,8 +177,8 @@ def load_transition_data(exclude_seasonal_only=True):
 
         # Also exclude seasonal -> seasonal transitions for cleaner visualization
         trans_df_filtered = trans_df[
-            ~((trans_df['from_archetype'] == 'seasonal_spike') &
-              (trans_df['to_archetype'] == 'seasonal_spike'))
+            ~((trans_df['from_archetype'] == 'seasonal_crisis') &
+              (trans_df['to_archetype'] == 'seasonal_crisis'))
         ]
     else:
         trans_df_filtered = trans_df
@@ -283,18 +283,18 @@ def figure_staircase_simplified():
         except (KeyError, ValueError):
             return 0
 
-    ss_to_pm = get_count('seasonal_spike', 'prolonged_moderate')
+    ss_to_pm = get_count('seasonal_crisis', 'prolonged_moderate')
     pm_to_pe = get_count('prolonged_moderate', 'protracted_emergency')
-    ss_to_pe = get_count('seasonal_spike', 'protracted_emergency')
-    pm_to_ss = get_count('prolonged_moderate', 'seasonal_spike')
-    pe_to_ss = get_count('protracted_emergency', 'seasonal_spike')
+    ss_to_pe = get_count('seasonal_crisis', 'protracted_emergency')
+    pm_to_ss = get_count('prolonged_moderate', 'seasonal_crisis')
+    pe_to_ss = get_count('protracted_emergency', 'seasonal_crisis')
 
     other_from_seasonal = (
-        get_count('seasonal_spike', 'rapid_onset') +
-        get_count('seasonal_spike', 'oscillating') +
-        get_count('seasonal_spike', 'entrenched_moderate') +
-        get_count('seasonal_spike', 'severe_shock') +
-        get_count('seasonal_spike', 'escalating')
+        get_count('seasonal_crisis', 'rapid_onset') +
+        get_count('seasonal_crisis', 'oscillating') +
+        get_count('seasonal_crisis', 'entrenched_moderate') +
+        get_count('seasonal_crisis', 'severe_shock') +
+        get_count('seasonal_crisis', 'escalating')
     )
 
     fig, ax = plt.subplots(figsize=(12, 7))
@@ -307,9 +307,9 @@ def figure_staircase_simplified():
     box_height = 1.4
 
     stages = [
-        {'name': 'seasonal_spike', 'label': 'Seasonal\nSpike', 'y': 4,
+        {'name': 'seasonal_crisis', 'label': 'Seasonal\nCrisis', 'y': 4,
          'desc': 'Entry point\nPredictable, cyclical'},
-        {'name': 'seasonal_spike', 'label': 'Seasonal\nSpike', 'y': 4,
+        {'name': 'seasonal_crisis', 'label': 'Seasonal\nCrisis', 'y': 4,
          'desc': 'Cycling\n(most common)'},
         {'name': 'prolonged_moderate', 'label': 'Prolonged\nModerate', 'y': 4,
          'desc': 'Intermediate stage\n12-36 months'},
@@ -347,8 +347,8 @@ def figure_staircase_simplified():
     y_recovery = y_center - 0.25
 
     # Cycling arrow between seasonal spike boxes
-    ss_to_ss_count = len(trans_all[(trans_all['from_archetype'] == 'seasonal_spike') &
-                                   (trans_all['to_archetype'] == 'seasonal_spike')])
+    ss_to_ss_count = len(trans_all[(trans_all['from_archetype'] == 'seasonal_crisis') &
+                                   (trans_all['to_archetype'] == 'seasonal_crisis')])
 
     cycle_x = (col_x[0] + col_x[1]) / 2
     arrow_y = y_center
@@ -484,7 +484,7 @@ def figure_alluvial_full():
     all_archetypes = list(set(list(from_totals.keys()) + list(to_totals.keys())))
 
     archetype_order = [
-        'seasonal_spike', 'prolonged_moderate', 'entrenched_moderate',
+        'seasonal_crisis', 'prolonged_moderate', 'entrenched_moderate',
         'rapid_onset', 'oscillating', 'escalating', 'severe_shock',
         'protracted_emergency',
     ]
@@ -633,7 +633,7 @@ def figure_alluvial_ipc_ordered():
         'oscillating': '3-4',
         'entrenched_moderate': '3',
         'prolonged_moderate': '3',
-        'seasonal_spike': '3',
+        'seasonal_crisis': '3',
     }
 
     fig, ax = plt.subplots(figsize=(14, 10))
@@ -654,7 +654,7 @@ def figure_alluvial_ipc_ordered():
 
     archetype_order_by_ipc = [
         'protracted_emergency', 'severe_shock', 'escalating', 'rapid_onset',
-        'oscillating', 'entrenched_moderate', 'prolonged_moderate', 'seasonal_spike',
+        'oscillating', 'entrenched_moderate', 'prolonged_moderate', 'seasonal_crisis',
     ]
     archetypes = [a for a in archetype_order_by_ipc if a in all_archetypes]
 
@@ -767,7 +767,7 @@ def figure_alluvial_ipc_ordered():
         'Phase 4-5': ['protracted_emergency', 'severe_shock'],
         'Phase 4': ['escalating', 'rapid_onset'],
         'Phase 3-4': ['oscillating'],
-        'Phase 3': ['entrenched_moderate', 'prolonged_moderate', 'seasonal_spike'],
+        'Phase 3': ['entrenched_moderate', 'prolonged_moderate', 'seasonal_crisis'],
     }
 
     phase_colors = {

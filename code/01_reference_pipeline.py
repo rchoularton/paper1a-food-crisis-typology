@@ -703,7 +703,7 @@ def _classify_archetype(row):
     elif traj in ['immediate_peak', 'early_peak']:
         return 'rapid_onset'
     elif dur_class == 'short' and sev_class == 'moderate':
-        return 'seasonal_spike'
+        return 'seasonal_crisis'
     elif sev_class in ['severe', 'extreme']:
         if dur <= 12:
             return 'severe_shock'
@@ -987,23 +987,23 @@ def compute_crisis_staircase(df_episodes):
         archetypes = [e['archetype'] for e in eps]
 
         for i in range(len(archetypes) - 1):
-            if archetypes[i] == 'seasonal_spike' and archetypes[i + 1] == 'prolonged_moderate':
+            if archetypes[i] == 'seasonal_crisis' and archetypes[i + 1] == 'prolonged_moderate':
                 seasonal_to_prolonged += 1
-            if archetypes[i] == 'seasonal_spike' and archetypes[i + 1] == 'protracted_emergency':
+            if archetypes[i] == 'seasonal_crisis' and archetypes[i + 1] == 'protracted_emergency':
                 seasonal_to_protracted += 1
             if archetypes[i] == 'prolonged_moderate' and archetypes[i + 1] == 'protracted_emergency':
                 prolonged_to_protracted += 1
 
         for i in range(len(archetypes) - 2):
-            if (archetypes[i] == 'seasonal_spike' and
-                archetypes[i + 1] == 'seasonal_spike' and
+            if (archetypes[i] == 'seasonal_crisis' and
+                archetypes[i + 1] == 'seasonal_crisis' and
                 archetypes[i + 2] == 'prolonged_moderate'):
                 double_seasonal_to_prolonged += 1
 
         has_seasonal = False
         has_prolonged_after_seasonal = False
         for a in archetypes:
-            if a == 'seasonal_spike':
+            if a == 'seasonal_crisis':
                 has_seasonal = True
             elif a == 'prolonged_moderate' and has_seasonal:
                 has_prolonged_after_seasonal = True
@@ -1199,7 +1199,7 @@ def _extract_sensitivity_row(result):
         'episodes': result['episodes']['total'],
         'locations': result['data_summary']['unique_locations'],
         'countries': result['episodes']['countries'],
-        'seasonal_spike_pct': result['archetypes']['percentages'].get('seasonal_spike', 0),
+        'seasonal_crisis_pct': result['archetypes']['percentages'].get('seasonal_crisis', 0),
         'protracted_pct': result['archetypes']['percentages'].get('protracted_emergency', 0),
         'phase3_crossover': (result['phase3_duration'].get('crossover', {}).get('month', None)
                              if 'crossover' in result['phase3_duration'] else None),
