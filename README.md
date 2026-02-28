@@ -45,10 +45,11 @@ conda activate paper1a
 ## Quick Start
 
 ```bash
-python run_all.py
+python run_all.py                   # Run all 14 steps
+python run_all.py --paper-only      # Paper figures only (skips supplementary)
 ```
 
-This runs all 14 steps sequentially. Expected runtime: **15–25 minutes** on a modern laptop (most time is spent on bootstrap confidence intervals in step 01).
+Expected runtime: **15–25 minutes** on a modern laptop (most time is spent on bootstrap confidence intervals in step 01).
 
 ### Run individual steps
 
@@ -56,6 +57,7 @@ This runs all 14 steps sequentially. Expected runtime: **15–25 minutes** on a 
 python run_all.py --step 1          # Run only step 1
 python run_all.py --analysis-only   # Steps 01-05 (data analysis)
 python run_all.py --figures-only    # Steps 06-14 (figures, requires step 01 first)
+python run_all.py --paper-only      # Steps 01-08, 12-14 (skip supplementary 09-11)
 ```
 
 ## Pipeline Overview
@@ -87,15 +89,15 @@ data/HFID_hv1.csv
        ▼
 ┌──────────────────────────────────────────────┐
 │ Figures 06-14: Publication figures (PNG+PDF)  │
-│   06 Fig 1: Archetype scatter                │
-│   07 Fig 2: Alluvial transitions             │
-│   08 Fig 3: Phase dynamics (6 panels)        │
-│   09 Fig 4: Recovery degradation             │
-│   10 Fig 5: Temporal trends                  │
-│   11 Fig 6: Conceptual framework             │
-│   12 ExtData: Crisis staircase               │
-│   13 ExtData: Gap compression                │
-│   14 ExtData: Geographic map (optional)      │
+│   06 Figure 1: Archetype scatter             │
+│   07 Figure 2: Alluvial transitions          │
+│   08 Figure 3: Phase dynamics (6 panels)     │
+│   09 Supplementary: Recovery degradation     │
+│   10 Supplementary: Temporal trends          │
+│   11 Supplementary: Conceptual framework     │
+│   12 Extended Data Fig 1: Crisis staircase   │
+│   13 Figure 4 + ED: Gap compression          │
+│   14 Extended Data Fig 2: Geographic map     │
 └──────────────────────────────────────────────┘
 ```
 
@@ -108,15 +110,15 @@ data/HFID_hv1.csv
 | 03 | `03_gap_analysis.py` | Analysis of inter-episode recovery gaps: duration, escalation risk, rapid cycling | `location_gap_patterns.csv`, `country_gap_patterns.csv` |
 | 04 | `04_gap_compression_robustness.py` | Tests whether gap compression is real vs composition bias (consistent locations, within-location trends) | `within_location_gap_trends.csv` |
 | 05 | `05_hfid_consistency.py` | FEWS NET vs CH/IPC classification agreement; IPC phase vs food security indicators | `hfid_consistency/` |
-| 06 | `06_fig1_archetypes.py` | Figure 1: Scatter plot of 8 archetypes (duration × severity) with convex hulls | `Figure1_archetype_scatter.png/.pdf` |
-| 07 | `07_fig2_alluvial.py` | Figure 2: Annual alluvial diagram showing archetype evolution (2016 cohort) | `Figure2_alluvial.png/.pdf` |
-| 08 | `08_fig3_phase_dynamics.py` | Figure 3: 6-panel grid showing transition matrix, asymmetry, and duration effects | `Figure3_phase_dynamics.png/.pdf` |
-| 09 | `09_fig4_recovery.py` | Figure 4: Recovery probability decay curves with exponential fit | `Figure4_recovery_degradation.png/.pdf` |
-| 10 | `10_fig5_temporal.py` | Figure 5: Temporal trends in Phase 4+ rates and archetype distribution | `Figure5_temporal_trends.png/.pdf` |
-| 11 | `11_fig6_framework.py` | Figure 6: Conceptual framework schematic (no data dependency) | `Figure6_conceptual_framework.png/.pdf` |
-| 12 | `12_extdata_staircase.py` | Extended Data: Crisis staircase alluvial diagram | `ExtData_crisis_staircase.png/.pdf` |
-| 13 | `13_extdata_gap_compression.py` | Extended Data: Gap compression time series | `ExtData_gap_compression.png/.pdf` |
-| 14 | `14_extdata_gap_map.py` | Extended Data: Geographic map of gap patterns (requires geopandas) | `ExtData_gap_compression_map.png/.pdf` |
+| 06 | `06_fig1_archetypes.py` | **Figure 1:** Scatter plot of 8 archetypes (duration × severity) with convex hulls | `Figure1_archetype_scatter.png/.pdf` |
+| 07 | `07_fig2_alluvial.py` | **Figure 2:** Annual alluvial diagram showing archetype evolution (2016 cohort) | `Figure2_alluvial.png/.pdf` |
+| 08 | `08_fig3_phase_dynamics.py` | **Figure 3:** 6-panel grid showing transition matrix, asymmetry, and duration effects | `Figure3_phase_dynamics.png/.pdf` |
+| 09 | `09_fig4_recovery.py` | *Supplementary:* Recovery probability decay curves with exponential fit | `Figure4_recovery_degradation.png/.pdf` |
+| 10 | `10_fig5_temporal.py` | *Supplementary:* Temporal trends in Phase 4+ rates and archetype distribution | `Figure5_temporal_trends.png/.pdf` |
+| 11 | `11_fig6_framework.py` | *Supplementary:* Conceptual framework schematic (no data dependency) | `Figure6_conceptual_framework.png/.pdf` |
+| 12 | `12_extdata_staircase.py` | **Extended Data Fig 1:** Crisis staircase alluvial diagram | `ExtData_crisis_staircase.png/.pdf` |
+| 13 | `13_extdata_gap_compression.py` | **Figure 4 + Extended Data:** Gap compression dual-panel and time series | `ExtData_gap_compression.png/.pdf` |
+| 14 | `14_extdata_gap_map.py` | **Extended Data Fig 2:** Geographic map of gap patterns (requires geopandas) | `ExtData_gap_compression_map.png/.pdf` |
 
 ## Output Manifest
 
@@ -129,18 +131,26 @@ data/HFID_hv1.csv
 | Recovery probability decay (R²=0.93) | `phase3_crossover.json` | `decay_fit.r_squared` |
 | 9-variant sensitivity | `sensitivity_summary.csv` | all columns |
 
-### Figures (from steps 06–14)
-| Paper Figure | Output File |
-|-------------|-------------|
-| Figure 1 | `outputs/figures/Figure1_archetype_scatter.png` |
-| Figure 2 | `outputs/figures/Figure2_alluvial.png` |
-| Figure 3 | `outputs/figures/Figure3_phase_dynamics.png` |
-| Figure 4 | `outputs/figures/Figure4_recovery_degradation.png` |
-| Figure 5 | `outputs/figures/Figure5_temporal_trends.png` |
-| Figure 6 | `outputs/figures/Figure6_conceptual_framework.png` |
-| Extended Data Fig 1 | `outputs/figures/ExtData_crisis_staircase.png` |
-| Extended Data Fig 2 | `outputs/figures/ExtData_gap_compression.png` |
-| Extended Data Fig 3 | `outputs/figures/ExtData_gap_compression_map.png` |
+### Paper Figure Correspondence
+
+| Paper Figure | Code Step | Output File |
+|---|---|---|
+| Figure 1: Archetype scatter | Step 06 | `outputs/figures/Figure1_archetype_scatter.png` |
+| Figure 2: Alluvial transitions | Step 07 | `outputs/figures/Figure2_alluvial.png` |
+| Figure 3: Phase dynamics 6-panel | Step 08 | `outputs/figures/Figure3_phase_dynamics.png` |
+| Figure 4: Gap compression dual-panel | Step 13 | `outputs/figures/ExtData_gap_compression.png` |
+| Extended Data Fig 1: Crisis staircase | Step 12 | `outputs/figures/ExtData_crisis_staircase.png` |
+| Extended Data Fig 2: Gap compression map | Step 14 | `outputs/figures/ExtData_gap_compression_map.png` |
+
+### Supplementary figures (from steps 09–11)
+
+These steps produce additional analysis not included in the final paper but available for reference:
+
+| Output File | Description |
+|---|---|
+| `outputs/figures/Figure4_recovery_degradation.png` | Recovery probability decay curves |
+| `outputs/figures/Figure5_temporal_trends.png` | Temporal trends in Phase 4+ rates |
+| `outputs/figures/Figure6_conceptual_framework.png` | Conceptual framework schematic |
 
 ## Expected Runtime
 

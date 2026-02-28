@@ -11,6 +11,7 @@ Usage:
     python run_all.py --step 6     # Run only step 6
     python run_all.py --analysis-only   # Steps 01-05 only
     python run_all.py --figures-only    # Steps 06-14 only
+    python run_all.py --paper-only     # Paper figures only (skips supplementary)
 
 Expected runtime: ~15-25 minutes total on a modern laptop.
 """
@@ -35,11 +36,11 @@ STEPS = [
     (6,  '06_fig1_archetypes.py',          'Figure 1: archetype scatter plot', False),
     (7,  '07_fig2_alluvial.py',            'Figure 2: alluvial transitions', False),
     (8,  '08_fig3_phase_dynamics.py',      'Figure 3: 6-panel phase dynamics', False),
-    (9,  '09_fig4_recovery.py',            'Figure 4: recovery degradation curves', False),
-    (10, '10_fig5_temporal.py',            'Figure 5: temporal trends', False),
-    (11, '11_fig6_framework.py',           'Figure 6: conceptual framework', False),
-    (12, '12_extdata_staircase.py',        'Extended Data: crisis staircase', False),
-    (13, '13_extdata_gap_compression.py',  'Extended Data: gap compression', False),
+    (9,  '09_fig4_recovery.py',            'Supplementary: recovery degradation curves', True),
+    (10, '10_fig5_temporal.py',            'Supplementary: temporal trends', True),
+    (11, '11_fig6_framework.py',           'Supplementary: conceptual framework', True),
+    (12, '12_extdata_staircase.py',        'Extended Data Fig 1: crisis staircase', False),
+    (13, '13_extdata_gap_compression.py',  'Figure 4 + Extended Data: gap compression', False),
     (14, '14_extdata_gap_map.py',          'Extended Data: geographic map (optional geopandas)', True),
 ]
 
@@ -107,6 +108,8 @@ def main():
                         help='Run analysis steps only (01-05)')
     parser.add_argument('--figures-only', action='store_true',
                         help='Run figure steps only (06-14)')
+    parser.add_argument('--paper-only', action='store_true',
+                        help='Run paper figures only (skips supplementary steps 09-11)')
     args = parser.parse_args()
 
     print("=" * 70)
@@ -127,6 +130,10 @@ def main():
         steps_to_run = [s for s in STEPS if s[0] <= 5]
     elif args.figures_only:
         steps_to_run = [s for s in STEPS if s[0] >= 6]
+    elif args.paper_only:
+        # Steps 01-08, 12-14 (skip supplementary steps 09-11)
+        supplementary = {9, 10, 11}
+        steps_to_run = [s for s in STEPS if s[0] not in supplementary]
     else:
         steps_to_run = STEPS
 

@@ -1,6 +1,7 @@
 {
   "title": "Reproducibility Package: A Typology of Food Security Crises — Eight Archetypes from 1,658 Episodes across 51 Countries",
   "description": "Code and data to reproduce all analyses and figures in the paper. Reads from the Harmonized Food Insecurity Dataset (HFID v1.1.1) and generates crisis episode detection, transition matrices, archetype classification, and all publication figures.",
+  "version": "1.1.0",
   "upload_type": "software",
   "creators": [
     {
