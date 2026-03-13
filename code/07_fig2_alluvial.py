@@ -14,8 +14,8 @@ Inputs  (relative to package root):
     data/HFID_hv1.csv                        (raw HFID for 2016 cohort)
 
 Outputs (relative to package root):
-    outputs/figures/Figure2_alluvial.png  (600 dpi)
-    outputs/figures/Figure2_alluvial.pdf
+    outputs/figures/Figure2_combined_alluvial.png  (600 dpi)
+    outputs/figures/Figure2_combined_alluvial.pdf
 
 Author: Richard Choularton
 """
@@ -734,8 +734,8 @@ def create_combined_figure():
 
     # Save
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    png_path = os.path.join(OUTPUT_DIR, 'Figure2_alluvial.png')
-    pdf_path = os.path.join(OUTPUT_DIR, 'Figure2_alluvial.pdf')
+    png_path = os.path.join(OUTPUT_DIR, 'Figure2_combined_alluvial.png')
+    pdf_path = os.path.join(OUTPUT_DIR, 'Figure2_combined_alluvial.pdf')
     fig.savefig(png_path, dpi=600, bbox_inches='tight', facecolor='white')
     fig.savefig(pdf_path, bbox_inches='tight', facecolor='white')
     plt.close(fig)
@@ -758,6 +758,33 @@ def create_combined_figure():
     return png_path, n_cohort
 
 
+def export_source_data():
+    """Export source data for Figure 2 to Excel."""
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    xlsx_path = os.path.join(OUTPUT_DIR, 'SourceData_Fig2.xlsx')
+
+    # Transition matrix (panel a data)
+    trans_df = pd.read_csv(TRANSITIONS_PATH)
+    matrix = pd.crosstab(trans_df['from_archetype'], trans_df['to_archetype'])
+
+    # Cohort annual counts (panel b data)
+    cohort = get_2016_cohort()
+    episodes = load_cohort_episodes(cohort)
+    _, period_counts, period_labels = build_annual_data(episodes)
+
+    annual_rows = []
+    for period in period_labels:
+        pc = period_counts.get(period, {})
+        for arch, count in pc.items():
+            annual_rows.append({'year': period, 'archetype': arch, 'n_locations': count})
+    annual_df = pd.DataFrame(annual_rows)
+
+    with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+        matrix.to_excel(writer, sheet_name='transition_matrix')
+        annual_df.to_excel(writer, sheet_name='annual_cohort_counts', index=False)
+    print(f"Saved: {xlsx_path}")
+
+
 # =====================================================================
 # Main
 # =====================================================================
@@ -776,6 +803,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
     png_path, n_cohort = create_combined_figure()
+    export_source_data()
 
     print("=" * 60)
     print("Done!")

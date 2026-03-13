@@ -1,22 +1,11 @@
 #!/usr/bin/env python3
 """
-12_extdata_staircase.py -- Extended Data Figure: Crisis Staircase & Alluvial
-=============================================================================
+12_extdata_staircase.py -- Extended Data Figure 1: Crisis Staircase
+=====================================================================
 
-Generates three panels illustrating how locations transition between crisis
-archetypes over consecutive episodes:
-
-  1. Simplified staircase diagram — seasonal -> prolonged -> protracted pathway
-     with cycling, escalation, recovery, and direct-jump arrows.
-  2. Full alluvial (Sankey) diagram — all archetype-to-archetype flows
-     (excluding seasonal->seasonal) weighted by transition count.
-  3. IPC-ordered alluvial — same alluvial with archetypes sorted by peak IPC
-     phase (most severe at top) and IPC bracket indicators.
-
-Algorithm is identical to the source script
-``papers/paper1a/figures/Figure_crisis_staircase_alluvial.py``; only the
-data-loading paths and output paths have been changed to read from the
-reproducibility-package ``outputs/data/`` directory.
+Generates the simplified staircase diagram (Extended Data Fig 1) showing
+the main escalation pathway: seasonal -> prolonged -> protracted, with
+cycling, escalation, recovery, and direct-jump arrows.
 
 Inputs (relative to package root):
     outputs/data/episodes.csv
@@ -25,14 +14,11 @@ Inputs (relative to package root):
         Produced by 02_generate_transitions.py
 
 Outputs (relative to package root):
-    outputs/figures/ExtData_crisis_staircase.png        (300 dpi)
-    outputs/figures/ExtData_crisis_staircase.pdf
-    outputs/figures/ExtData_alluvial_transitions.png     (300 dpi)
-    outputs/figures/ExtData_alluvial_transitions.pdf
-    outputs/figures/ExtData_alluvial_ipc_ordered.png     (300 dpi)
-    outputs/figures/ExtData_alluvial_ipc_ordered.pdf
+    outputs/figures/Figure_crisis_staircase.png        (300 dpi)
+    outputs/figures/Figure_crisis_staircase.pdf
+    outputs/figures/SourceData_EDFig1.xlsx
 
-Dependencies: pandas, numpy, matplotlib
+Dependencies: pandas, numpy, matplotlib, openpyxl
 
 Author: Richard Choularton
 """
@@ -41,9 +27,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch, PathPatch
-from matplotlib.path import Path as MPath
+from matplotlib.patches import FancyBboxPatch
 
 # ============================================================
 # Paths -- relative to package root
@@ -93,28 +77,6 @@ ARCHETYPE_LABELS = {
     'entrenched_moderate': 'Entrenched\nmoderate',
     'oscillating': 'Oscillating',
     'severe_shock': 'Severe\nshock',
-    'escalating': 'Escalating',
-}
-
-ARCHETYPE_SHORT = {
-    'seasonal_crisis': 'Seasonal',
-    'prolonged_moderate': 'Prolonged',
-    'protracted_emergency': 'Protracted',
-    'rapid_onset': 'Rapid',
-    'entrenched_moderate': 'Entrenched',
-    'oscillating': 'Oscillating',
-    'severe_shock': 'Severe',
-    'escalating': 'Escalating',
-}
-
-ARCHETYPE_FULL = {
-    'seasonal_crisis': 'Seasonal crisis',
-    'prolonged_moderate': 'Prolonged moderate',
-    'protracted_emergency': 'Protracted emergency',
-    'rapid_onset': 'Rapid onset',
-    'entrenched_moderate': 'Entrenched moderate',
-    'oscillating': 'Oscillating',
-    'severe_shock': 'Severe shock',
     'escalating': 'Escalating',
 }
 
@@ -197,75 +159,7 @@ def load_transition_data(exclude_seasonal_only=True):
 
 
 # ============================================================
-# Drawing helpers (unchanged from source)
-# ============================================================
-
-def draw_curved_arrow(ax, start, end, width, color, alpha=0.6):
-    """Draw a curved flow arrow between two points."""
-    mid_x = (start[0] + end[0]) / 2
-
-    verts = [
-        (start[0], start[1] + width/2),
-        (mid_x, start[1] + width/2),
-        (mid_x, end[1] + width/2),
-        (end[0], end[1] + width/2),
-        (end[0], end[1] - width/2),
-        (mid_x, end[1] - width/2),
-        (mid_x, start[1] - width/2),
-        (start[0], start[1] - width/2),
-        (start[0], start[1] + width/2),
-    ]
-
-    codes = [
-        MPath.MOVETO,
-        MPath.CURVE4, MPath.CURVE4, MPath.CURVE4,
-        MPath.LINETO,
-        MPath.CURVE4, MPath.CURVE4, MPath.CURVE4,
-        MPath.CLOSEPOLY,
-    ]
-
-    path = MPath(verts, codes)
-    patch = mpatches.PathPatch(path, facecolor=color, edgecolor='white',
-                               linewidth=0.3, alpha=alpha)
-    ax.add_patch(patch)
-
-
-def draw_curved_flow(ax, x1, y1_bottom, height1, x2, y2_bottom, height2, color, alpha=0.6):
-    """Draw a curved flow band connecting two bars with proper bezier curves."""
-    cx = (x1 + x2) / 2
-
-    top_verts = [
-        (x1, y1_bottom + height1),
-        (cx, y1_bottom + height1),
-        (cx, y2_bottom + height2),
-        (x2, y2_bottom + height2),
-    ]
-
-    bottom_verts = [
-        (x2, y2_bottom),
-        (cx, y2_bottom),
-        (cx, y1_bottom),
-        (x1, y1_bottom),
-    ]
-
-    verts = top_verts + bottom_verts + [(x1, y1_bottom + height1)]
-
-    codes = [
-        MPath.MOVETO,
-        MPath.CURVE4, MPath.CURVE4, MPath.CURVE4,
-        MPath.LINETO,
-        MPath.CURVE4, MPath.CURVE4, MPath.CURVE4,
-        MPath.CLOSEPOLY,
-    ]
-
-    path = MPath(verts, codes)
-    patch = PathPatch(path, facecolor=color, edgecolor='none',
-                      linewidth=0, alpha=alpha)
-    ax.add_patch(patch)
-
-
-# ============================================================
-# Figure 1: Simplified staircase
+# Figure: Simplified staircase
 # ============================================================
 
 def figure_staircase_simplified():
@@ -445,412 +339,8 @@ def figure_staircase_simplified():
 
     plt.tight_layout()
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    filepath_png = os.path.join(FIGURES_DIR, 'ExtData_crisis_staircase.png')
-    filepath_pdf = os.path.join(FIGURES_DIR, 'ExtData_crisis_staircase.pdf')
-    plt.savefig(filepath_png, dpi=300, facecolor='white', bbox_inches='tight')
-    plt.savefig(filepath_pdf, facecolor='white', bbox_inches='tight')
-    plt.close()
-    print(f"Saved: {filepath_png}")
-    print(f"Saved: {filepath_pdf}")
-
-
-# ============================================================
-# Figure 2: Full alluvial diagram
-# ============================================================
-
-def figure_alluvial_full():
-    """Create a full alluvial/Sankey diagram showing all archetype transitions."""
-    print("Creating full alluvial diagram...")
-
-    matrix_df, trans_df, loc_df, trans_all = load_transition_data(exclude_seasonal_only=True)
-
-    n_locations = len(loc_df)
-    n_transitions = len(trans_df)
-
-    fig, ax = plt.subplots(figsize=(12, 10))
-    ax.set_xlim(0, 14)
-    ax.set_ylim(0, 12)
-    ax.axis('off')
-
-    plot_matrix = matrix_df.drop('All', axis=0, errors='ignore').drop('All', axis=1, errors='ignore')
-
-    from_totals = {}
-    to_totals = {}
-    for arch in plot_matrix.index:
-        from_totals[arch] = plot_matrix.loc[arch].sum()
-    for arch in plot_matrix.columns:
-        to_totals[arch] = plot_matrix[arch].sum()
-
-    all_archetypes = list(set(list(from_totals.keys()) + list(to_totals.keys())))
-
-    archetype_order = [
-        'seasonal_crisis', 'prolonged_moderate', 'entrenched_moderate',
-        'rapid_onset', 'oscillating', 'escalating', 'severe_shock',
-        'protracted_emergency',
-    ]
-    archetypes = [a for a in archetype_order if a in all_archetypes]
-
-    left_x = 3.5
-    right_x = 10.5
-    bar_width = 0.4
-
-    plot_height = 8.0
-    y_start = 1.5
-    gap = 0.3
-
-    def calc_positions(totals_dict, archetypes_list):
-        positions = {}
-        active = [(a, totals_dict.get(a, 0)) for a in archetypes_list if totals_dict.get(a, 0) > 0]
-        if not active:
-            return positions
-        total = sum(t for _, t in active)
-        n_bars = len(active)
-        total_gap = gap * (n_bars - 1)
-        available_height = plot_height - total_gap
-        current_y = y_start
-        for arch, count in active:
-            height = (count / total) * available_height
-            height = max(height, 0.3)
-            positions[arch] = {
-                'y_bottom': current_y, 'height': height,
-                'y_center': current_y + height / 2,
-                'y_top': current_y + height, 'count': count
-            }
-            current_y += height + gap
-        return positions
-
-    left_positions = calc_positions(from_totals, archetypes)
-    right_positions = calc_positions(to_totals, archetypes)
-
-    left_flow_y = {arch: pos['y_bottom'] for arch, pos in left_positions.items()}
-    right_flow_y = {arch: pos['y_bottom'] for arch, pos in right_positions.items()}
-
-    flows = []
-    for from_arch in archetypes:
-        if from_arch not in plot_matrix.index:
-            continue
-        for to_arch in archetypes:
-            if to_arch not in plot_matrix.columns:
-                continue
-            count = plot_matrix.loc[from_arch, to_arch]
-            if count >= 1:
-                flows.append((from_arch, to_arch, count))
-
-    flows.sort(key=lambda x: x[2], reverse=True)
-
-    for from_arch, to_arch, count in flows:
-        if from_arch not in left_positions or to_arch not in right_positions:
-            continue
-        from_total = from_totals[from_arch]
-        to_total = to_totals[to_arch]
-        from_height = (count / from_total) * left_positions[from_arch]['height']
-        to_height = (count / to_total) * right_positions[to_arch]['height']
-        flow_height = (from_height + to_height) / 2
-        flow_height = max(flow_height, 0.06)
-        from_y = left_flow_y[from_arch]
-        to_y = right_flow_y[to_arch]
-        left_flow_y[from_arch] += from_height
-        right_flow_y[to_arch] += to_height
-        color = ARCHETYPE_COLORS[from_arch]
-        alpha = 0.65
-        draw_curved_flow(ax,
-                         left_x + bar_width/2, from_y, from_height,
-                         right_x - bar_width/2, to_y, to_height,
-                         color, alpha)
-
-    for arch in archetypes:
-        if arch in left_positions:
-            pos = left_positions[arch]
-            rect = FancyBboxPatch(
-                (left_x - bar_width/2, pos['y_bottom']), bar_width, pos['height'],
-                boxstyle="round,pad=0.02",
-                facecolor=ARCHETYPE_COLORS[arch], edgecolor='none', linewidth=0
-            )
-            ax.add_patch(rect)
-            ax.text(left_x - bar_width/2 - 0.2, pos['y_center'],
-                    ARCHETYPE_FULL[arch], ha='right', va='center', fontsize=9,
-                    fontweight='bold')
-            ax.text(left_x - bar_width/2 - 0.2, pos['y_center'] - 0.35,
-                    f'n={int(pos["count"])}', ha='right', va='center',
-                    fontsize=7, color='#555555')
-
-    for arch in archetypes:
-        if arch in right_positions:
-            pos = right_positions[arch]
-            rect = FancyBboxPatch(
-                (right_x - bar_width/2, pos['y_bottom']), bar_width, pos['height'],
-                boxstyle="round,pad=0.02",
-                facecolor=ARCHETYPE_COLORS[arch], edgecolor='none', linewidth=0
-            )
-            ax.add_patch(rect)
-            ax.text(right_x + bar_width/2 + 0.2, pos['y_center'],
-                    ARCHETYPE_FULL[arch], ha='left', va='center', fontsize=9,
-                    fontweight='bold')
-            ax.text(right_x + bar_width/2 + 0.2, pos['y_center'] - 0.35,
-                    f'n={int(pos["count"])}', ha='left', va='center',
-                    fontsize=7, color='#555555')
-
-    ax.text(left_x, 11.0, 'From (Episode N)', ha='center', va='center',
-            fontsize=11, fontweight='bold')
-    ax.text(right_x, 11.0, 'To (Episode N+1)', ha='center', va='center',
-            fontsize=11, fontweight='bold')
-
-    ax.text(7, 11.6, 'Crisis Archetype Transitions',
-            ha='center', va='center', fontsize=14, fontweight='bold')
-    ax.text(7, 11.15,
-            f'{n_transitions} transitions across {n_locations} locations (excludes seasonal\u2192seasonal cycling)',
-            ha='center', va='center', fontsize=9, color='#666666', style='italic')
-
-    plt.tight_layout()
-    os.makedirs(FIGURES_DIR, exist_ok=True)
-    filepath_png = os.path.join(FIGURES_DIR, 'ExtData_alluvial_transitions.png')
-    filepath_pdf = os.path.join(FIGURES_DIR, 'ExtData_alluvial_transitions.pdf')
-    plt.savefig(filepath_png, dpi=300, facecolor='white', bbox_inches='tight')
-    plt.savefig(filepath_pdf, facecolor='white', bbox_inches='tight')
-    plt.close()
-    print(f"Saved: {filepath_png}")
-    print(f"Saved: {filepath_pdf}")
-
-
-# ============================================================
-# Figure 3: IPC-ordered alluvial
-# ============================================================
-
-def figure_alluvial_ipc_ordered():
-    """Create alluvial diagram with archetypes ordered by IPC severity."""
-    print("Creating IPC-ordered alluvial diagram...")
-
-    matrix_df, trans_df, loc_df, trans_all = load_transition_data(exclude_seasonal_only=True)
-
-    n_locations = len(loc_df)
-    n_transitions = len(trans_df)
-
-    ARCHETYPE_IPC = {
-        'protracted_emergency': '4-5',
-        'severe_shock': '4-5',
-        'escalating': '4',
-        'rapid_onset': '4',
-        'oscillating': '3-4',
-        'entrenched_moderate': '3',
-        'prolonged_moderate': '3',
-        'seasonal_crisis': '3',
-    }
-
-    fig, ax = plt.subplots(figsize=(14, 10))
-    ax.set_xlim(0, 16)
-    ax.set_ylim(0, 11.5)
-    ax.axis('off')
-
-    plot_matrix = matrix_df.drop('All', axis=0, errors='ignore').drop('All', axis=1, errors='ignore')
-
-    from_totals = {}
-    to_totals = {}
-    for arch in plot_matrix.index:
-        from_totals[arch] = plot_matrix.loc[arch].sum()
-    for arch in plot_matrix.columns:
-        to_totals[arch] = plot_matrix[arch].sum()
-
-    all_archetypes = list(set(list(from_totals.keys()) + list(to_totals.keys())))
-
-    archetype_order_by_ipc = [
-        'protracted_emergency', 'severe_shock', 'escalating', 'rapid_onset',
-        'oscillating', 'entrenched_moderate', 'prolonged_moderate', 'seasonal_crisis',
-    ]
-    archetypes = [a for a in archetype_order_by_ipc if a in all_archetypes]
-
-    left_x = 4.5
-    right_x = 11.5
-    bar_width = 0.4
-
-    plot_height = 8.0
-    y_start = 1.5
-    gap = 0.3
-
-    def calc_positions(totals_dict, archetypes_list):
-        positions = {}
-        active = [(a, totals_dict.get(a, 0)) for a in archetypes_list if totals_dict.get(a, 0) > 0]
-        if not active:
-            return positions
-        total = sum(t for _, t in active)
-        n_bars = len(active)
-        total_gap = gap * (n_bars - 1)
-        available_height = plot_height - total_gap
-        current_y = y_start
-        for arch, count in active:
-            height = (count / total) * available_height
-            height = max(height, 0.3)
-            positions[arch] = {
-                'y_bottom': current_y, 'height': height,
-                'y_center': current_y + height / 2,
-                'y_top': current_y + height, 'count': count
-            }
-            current_y += height + gap
-        return positions
-
-    left_positions = calc_positions(from_totals, archetypes)
-    right_positions = calc_positions(to_totals, archetypes)
-
-    left_flow_y = {arch: pos['y_bottom'] for arch, pos in left_positions.items()}
-    right_flow_y = {arch: pos['y_bottom'] for arch, pos in right_positions.items()}
-
-    flows = []
-    for from_arch in archetypes:
-        if from_arch not in plot_matrix.index:
-            continue
-        for to_arch in archetypes:
-            if to_arch not in plot_matrix.columns:
-                continue
-            count = plot_matrix.loc[from_arch, to_arch]
-            if count >= 1:
-                flows.append((from_arch, to_arch, count))
-
-    flows.sort(key=lambda x: x[2], reverse=True)
-
-    for from_arch, to_arch, count in flows:
-        if from_arch not in left_positions or to_arch not in right_positions:
-            continue
-        from_total = from_totals[from_arch]
-        to_total = to_totals[to_arch]
-        from_height = (count / from_total) * left_positions[from_arch]['height']
-        to_height = (count / to_total) * right_positions[to_arch]['height']
-        flow_height = (from_height + to_height) / 2
-        flow_height = max(flow_height, 0.06)
-        from_y = left_flow_y[from_arch]
-        to_y = right_flow_y[to_arch]
-        left_flow_y[from_arch] += from_height
-        right_flow_y[to_arch] += to_height
-        color = ARCHETYPE_COLORS[from_arch]
-        alpha = 0.65
-        draw_curved_flow(ax,
-                         left_x + bar_width/2, from_y, from_height,
-                         right_x - bar_width/2, to_y, to_height,
-                         color, alpha)
-
-    # Draw bars (no borders)
-    for arch in archetypes:
-        if arch in left_positions:
-            pos = left_positions[arch]
-            rect = FancyBboxPatch(
-                (left_x - bar_width/2, pos['y_bottom']), bar_width, pos['height'],
-                boxstyle="round,pad=0.02",
-                facecolor=ARCHETYPE_COLORS[arch], edgecolor='none', linewidth=0
-            )
-            ax.add_patch(rect)
-            ax.text(left_x - bar_width/2 - 0.2, pos['y_center'],
-                    ARCHETYPE_FULL[arch], ha='right', va='center', fontsize=9,
-                    fontweight='bold')
-            ax.text(left_x - bar_width/2 - 0.2, pos['y_center'] - 0.35,
-                    f'n={int(pos["count"])}', ha='right', va='center',
-                    fontsize=7, color='#555555')
-
-    for arch in archetypes:
-        if arch in right_positions:
-            pos = right_positions[arch]
-            rect = FancyBboxPatch(
-                (right_x - bar_width/2, pos['y_bottom']), bar_width, pos['height'],
-                boxstyle="round,pad=0.02",
-                facecolor=ARCHETYPE_COLORS[arch], edgecolor='none', linewidth=0
-            )
-            ax.add_patch(rect)
-            ax.text(right_x + bar_width/2 + 0.2, pos['y_center'],
-                    ARCHETYPE_FULL[arch], ha='left', va='center', fontsize=9,
-                    fontweight='bold')
-            ax.text(right_x + bar_width/2 + 0.2, pos['y_center'] - 0.35,
-                    f'n={int(pos["count"])}', ha='left', va='center',
-                    fontsize=7, color='#555555')
-
-    # IPC Phase brackets
-    ipc_x_left = 1.8
-    ipc_x_right = 14.2
-
-    phase_groups = {
-        'Phase 4-5': ['protracted_emergency', 'severe_shock'],
-        'Phase 4': ['escalating', 'rapid_onset'],
-        'Phase 3-4': ['oscillating'],
-        'Phase 3': ['entrenched_moderate', 'prolonged_moderate', 'seasonal_crisis'],
-    }
-
-    phase_colors = {
-        'Phase 4-5': '#CC0000',
-        'Phase 4': '#EE6677',
-        'Phase 3-4': '#EE8866',
-        'Phase 3': '#4477AA',
-    }
-
-    def draw_ipc_bracket(ax, x, y_bottom, y_top, label, color, side='left'):
-        bracket_width = 0.15
-        if side == 'left':
-            ax.plot([x + bracket_width, x, x, x + bracket_width],
-                    [y_top, y_top, y_bottom, y_bottom],
-                    color=color, linewidth=2, solid_capstyle='round')
-            ax.text(x - 0.1, (y_top + y_bottom) / 2, label,
-                    ha='right', va='center', fontsize=8, fontweight='bold',
-                    color=color, rotation=90)
-        else:
-            ax.plot([x - bracket_width, x, x, x - bracket_width],
-                    [y_top, y_top, y_bottom, y_bottom],
-                    color=color, linewidth=2, solid_capstyle='round')
-            ax.text(x + 0.1, (y_top + y_bottom) / 2, label,
-                    ha='left', va='center', fontsize=8, fontweight='bold',
-                    color=color, rotation=270)
-
-    for phase, archs in phase_groups.items():
-        y_positions = []
-        for arch in archs:
-            if arch in left_positions:
-                pos = left_positions[arch]
-                y_positions.append(pos['y_bottom'])
-                y_positions.append(pos['y_top'])
-        if y_positions:
-            y_min = min(y_positions)
-            y_max = max(y_positions)
-            draw_ipc_bracket(ax, ipc_x_left, y_min, y_max, phase,
-                             phase_colors[phase], 'left')
-
-    for phase, archs in phase_groups.items():
-        y_positions = []
-        for arch in archs:
-            if arch in right_positions:
-                pos = right_positions[arch]
-                y_positions.append(pos['y_bottom'])
-                y_positions.append(pos['y_top'])
-        if y_positions:
-            y_min = min(y_positions)
-            y_max = max(y_positions)
-            draw_ipc_bracket(ax, ipc_x_right, y_min, y_max, phase,
-                             phase_colors[phase], 'right')
-
-    all_y_positions = []
-    for pos in left_positions.values():
-        all_y_positions.extend([pos['y_bottom'], pos['y_top']])
-    for pos in right_positions.values():
-        all_y_positions.extend([pos['y_bottom'], pos['y_top']])
-
-    y_min = min(all_y_positions) if all_y_positions else 1.5
-    y_max = max(all_y_positions) if all_y_positions else 9.5
-
-    ax.text(8, 11.2, 'Crisis Archetype Transitions by IPC Phase',
-            ha='center', va='center', fontsize=14, fontweight='bold')
-    ax.text(8, 10.75,
-            f'{n_transitions} transitions across {n_locations} locations (excludes seasonal\u2192seasonal cycling)',
-            ha='center', va='center', fontsize=9, color='#666666', style='italic')
-
-    header_y = y_max + 0.3
-    ax.text(left_x, header_y, 'From (Episode N)', ha='center', va='bottom',
-            fontsize=11, fontweight='bold')
-    ax.text(right_x, header_y, 'To (Episode N+1)', ha='center', va='bottom',
-            fontsize=11, fontweight='bold')
-
-    arrow_x = 0.8
-    ax.annotate('', xy=(arrow_x, y_min - 0.1), xytext=(arrow_x, y_max + 0.1),
-                arrowprops=dict(arrowstyle='->', color='#666666', lw=2))
-    ax.text(arrow_x - 0.4, (y_min + y_max) / 2, 'Increasing\nSeverity',
-            ha='center', va='center', fontsize=8, color='#666666', rotation=90)
-
-    plt.tight_layout()
-    os.makedirs(FIGURES_DIR, exist_ok=True)
-    filepath_png = os.path.join(FIGURES_DIR, 'ExtData_alluvial_ipc_ordered.png')
-    filepath_pdf = os.path.join(FIGURES_DIR, 'ExtData_alluvial_ipc_ordered.pdf')
+    filepath_png = os.path.join(FIGURES_DIR, 'Figure_crisis_staircase.png')
+    filepath_pdf = os.path.join(FIGURES_DIR, 'Figure_crisis_staircase.pdf')
     plt.savefig(filepath_png, dpi=300, facecolor='white', bbox_inches='tight')
     plt.savefig(filepath_pdf, facecolor='white', bbox_inches='tight')
     plt.close()
@@ -862,15 +352,41 @@ def figure_alluvial_ipc_ordered():
 # Main
 # ============================================================
 
+def export_source_data():
+    """Export source data for Extended Data Figure 1 to Excel."""
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    xlsx_path = os.path.join(FIGURES_DIR, 'SourceData_EDFig1.xlsx')
+
+    matrix_df, trans_df, loc_df, trans_all = load_transition_data(exclude_seasonal_only=True)
+    plot_matrix = matrix_df.drop('All', axis=0, errors='ignore').drop('All', axis=1, errors='ignore')
+
+    # Staircase pathway counts
+    pathway_rows = []
+    for from_arch in plot_matrix.index:
+        for to_arch in plot_matrix.columns:
+            count = plot_matrix.loc[from_arch, to_arch]
+            if count > 0:
+                pathway_rows.append({
+                    'from_archetype': from_arch,
+                    'to_archetype': to_arch,
+                    'n_transitions': int(count),
+                })
+    pathway_df = pd.DataFrame(pathway_rows).sort_values('n_transitions', ascending=False)
+
+    with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+        pathway_df.to_excel(writer, sheet_name='transition_counts', index=False)
+        plot_matrix.to_excel(writer, sheet_name='transition_matrix')
+    print(f"Saved: {xlsx_path}")
+
+
 def main():
-    """Generate all crisis staircase extended data figures."""
+    """Generate Extended Data Figure 1: Crisis Staircase."""
     print("=" * 60)
-    print("Generating Extended Data: Crisis Staircase & Alluvial Diagrams")
+    print("Generating Extended Data Figure 1: Crisis Staircase")
     print("=" * 60)
 
     figure_staircase_simplified()
-    figure_alluvial_full()
-    figure_alluvial_ipc_ordered()
+    export_source_data()
 
     print("=" * 60)
     print(f"All figures saved to: {FIGURES_DIR}")

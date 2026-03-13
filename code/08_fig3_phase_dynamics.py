@@ -20,8 +20,8 @@ Inputs  (relative to package root):
     outputs/data/phase3_crossover.json  (optional)
 
 Outputs (relative to package root):
-    outputs/figures/Figure3_phase_dynamics.png  (600 dpi)
-    outputs/figures/Figure3_phase_dynamics.pdf
+    outputs/figures/Figure3_recovery_asymmetry.png  (600 dpi)
+    outputs/figures/Figure3_recovery_asymmetry.pdf
 
 Author: Richard Choularton
 """
@@ -343,8 +343,8 @@ def create_figure3():
 
     # Save -- 600 DPI for line art (Nature Food standard)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    png_path = os.path.join(OUTPUT_DIR, 'Figure3_phase_dynamics.png')
-    pdf_path = os.path.join(OUTPUT_DIR, 'Figure3_phase_dynamics.pdf')
+    png_path = os.path.join(OUTPUT_DIR, 'Figure3_recovery_asymmetry.png')
+    pdf_path = os.path.join(OUTPUT_DIR, 'Figure3_recovery_asymmetry.pdf')
     plt.savefig(png_path, dpi=600, facecolor='white', bbox_inches='tight')
     plt.savefig(pdf_path, facecolor='white', bbox_inches='tight')
     plt.close()
@@ -370,6 +370,51 @@ def create_figure3():
     return png_path
 
 
+def export_source_data():
+    """Export source data for Figure 3 to Excel."""
+    import pandas as pd
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    xlsx_path = os.path.join(OUTPUT_DIR, 'SourceData_Fig3.xlsx')
+
+    # Panel a: transition matrix
+    matrix_path = os.path.join(DATA_DIR, 'full_transition_matrix.json')
+    with open(matrix_path) as f:
+        matrix_data = json.load(f)
+    trans_array = np.array(matrix_data['matrix_pct'])
+    phases = [1, 2, 3, 4, 5]
+    matrix_df = pd.DataFrame(trans_array, index=phases, columns=phases)
+    matrix_df.index.name = 'from_phase'
+    matrix_df.columns.name = 'to_phase'
+
+    # Panels b-f: duration-conditioned data
+    duration_rows = []
+    for p in range(1, 6):
+        try:
+            pdata = load_phase_data(p)
+            series = extract_series(pdata)
+            for i, k in enumerate(BIN_KEYS):
+                duration_rows.append({
+                    'phase': p,
+                    'duration_bin': k,
+                    'recovery_pct': series['recovery'][i],
+                    'persistence_pct': series['persistence'][i],
+                    'escalation_pct': series['escalation'][i],
+                    'recovery_ci_lo': series['recovery_ci_lo'][i],
+                    'recovery_ci_hi': series['recovery_ci_hi'][i],
+                    'escalation_ci_lo': series['escalation_ci_lo'][i],
+                    'escalation_ci_hi': series['escalation_ci_hi'][i],
+                    'n': int(series['n'][i]),
+                })
+        except FileNotFoundError:
+            pass
+    duration_df = pd.DataFrame(duration_rows)
+
+    with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+        matrix_df.to_excel(writer, sheet_name='panel_a_transition_matrix')
+        duration_df.to_excel(writer, sheet_name='panels_b_f_duration', index=False)
+    print(f"Saved: {xlsx_path}")
+
+
 # ============================================================
 # Main
 # ============================================================
@@ -386,6 +431,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     create_figure3()
+    export_source_data()
 
     print("=" * 60)
     print("Done!")

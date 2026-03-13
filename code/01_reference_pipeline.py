@@ -35,6 +35,7 @@ Outputs (all in outputs/data/):
 Author: Richard Choularton
 """
 
+import argparse
 import json
 import os
 import sys
@@ -1356,15 +1357,32 @@ def run_full_pipeline(df_raw, priority='fews', aggregation='max',
 
 
 # ============================================================
-# Main Execution
+# Intermediate data for phase split
+# ============================================================
+INTERMEDIATE_INTERP = os.path.join(OUTPUT_DIR, '_intermediate_interp.csv')
+
+
+def _load_intermediates():
+    """Reload intermediate data saved by the core phase."""
+    df_interp = pd.read_csv(INTERMEDIATE_INTERP, parse_dates=['date'])
+    df_episodes = pd.read_csv(os.path.join(OUTPUT_DIR, 'episodes.csv'))
+    df_episodes['phases'] = df_episodes['phases'].apply(
+        lambda x: [int(p) for p in str(x).split(',')])
+    df_episodes['dates'] = df_episodes['dates'].apply(
+        lambda x: [pd.Timestamp(d) for d in str(x).split(',')])
+    with open(os.path.join(OUTPUT_DIR, 'full_transition_matrix.json')) as f:
+        primary_data = json.load(f)
+    with open(os.path.join(OUTPUT_DIR, 'admin2_transition_analysis.json')) as f:
+        admin2_data = json.load(f)
+    return df_interp, df_episodes, primary_data, admin2_data
+
+
+# ============================================================
+# Core Phase: Primary + Admin2 analysis
 # ============================================================
 
-def main():
-    start_time = time.time()
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    df_raw = load_hfid()
-
+def run_core_phase(df_raw):
+    """Run primary analysis with bootstrap and admin2 sensitivity."""
     # PRIMARY ANALYSIS
     print("\n" + "=" * 70)
     print("  PRIMARY ANALYSIS (authoritative pipeline)")
@@ -1393,6 +1411,11 @@ def main():
         'bootstrap_cis': primary_result['bootstrap_cis'],
         'cell_cis': primary_result['cell_cis'],
         'method': 'FEWS NET priority, Phase 6 filtered, MAX aggregation, 12-month interpolation',
+        'pipeline': primary_result['pipeline'],
+        'episodes': primary_result['episodes'],
+        'archetypes': primary_result['archetypes'],
+        'data_summary': primary_result['data_summary'],
+        'phase3_duration': primary_result['phase3_duration'],
     })
 
     for phase_num, phase_key in [(1, 'phase1_duration'), (2, 'phase2_duration'),
@@ -1435,6 +1458,33 @@ def main():
         'pipeline': admin2_result['pipeline'],
     })
 
+    # Save intermediate data for robustness phase
+    primary_interp.to_csv(INTERMEDIATE_INTERP, index=False)
+    print(f"  Saved intermediate data: {INTERMEDIATE_INTERP}")
+
+    return primary_result, primary_episodes, primary_interp, admin2_result
+
+
+# ============================================================
+# Robustness Phase: Sensitivity + verification analyses
+# ============================================================
+
+def run_robustness_phase(df_raw, primary_result=None, primary_episodes=None,
+                         primary_interp=None, admin2_result=None):
+    """Run sensitivity variants and all verification analyses.
+
+    When called with --phase robustness, reloads intermediate data from disk.
+    When called with --phase all, uses in-memory variables directly.
+    """
+    if primary_interp is None:
+        # Reload from disk (--phase robustness)
+        print("\n  Loading intermediate data from core phase...")
+        primary_interp, primary_episodes, primary_data, admin2_data = _load_intermediates()
+        print(f"  Loaded: {len(primary_interp)} interpolated rows, {len(primary_episodes)} episodes")
+    else:
+        primary_data = None
+        admin2_data = None
+
     # SENSITIVITY VARIANTS
     print("\n" + "=" * 70)
     print("  SENSITIVITY ANALYSIS (9 pipeline variants)")
@@ -1455,16 +1505,18 @@ def main():
     sensitivity_results = []
     for var_label, priority, agg, gap, is_a2 in variants:
         if var_label == 'FEWS + MAX + 12mo':
-            sensitivity_results.append({
-                'label': var_label,
-                **_extract_sensitivity_row(primary_result),
-            })
+            if primary_result is not None:
+                row = _extract_sensitivity_row(primary_result)
+            else:
+                row = _extract_sensitivity_row_from_json(primary_data)
+            sensitivity_results.append({'label': var_label, **row})
             continue
         if var_label == 'FEWS + admin2 + 12mo':
-            sensitivity_results.append({
-                'label': var_label,
-                **_extract_sensitivity_row(admin2_result),
-            })
+            if admin2_result is not None:
+                row = _extract_sensitivity_row(admin2_result)
+            else:
+                row = _extract_sensitivity_row_from_json(admin2_data)
+            sensitivity_results.append({'label': var_label, **row})
             continue
 
         result, _, _ = run_full_pipeline(
@@ -1484,7 +1536,11 @@ def main():
 
     # COUNTRY COUNTS
     country_counts = compute_country_counts(df_raw)
-    country_counts['countries_with_episodes'] = primary_result['episodes']['countries']
+    if primary_result is not None:
+        country_counts['countries_with_episodes'] = primary_result['episodes']['countries']
+    else:
+        country_counts['countries_with_episodes'] = primary_data.get('episodes', {}).get('countries',
+                                                     int(primary_episodes['country'].nunique()) if 'country' in primary_episodes.columns else 0)
     save_json(os.path.join(OUTPUT_DIR, 'country_counts.json'), country_counts)
 
     # EPISODE VERIFICATION
@@ -1511,14 +1567,75 @@ def main():
     staircase_result = compute_crisis_staircase(primary_episodes)
     save_json(os.path.join(OUTPUT_DIR, 'crisis_staircase.json'), staircase_result)
 
+
+def _extract_sensitivity_row_from_json(data):
+    """Extract sensitivity row from saved JSON data (for --phase robustness)."""
+    key_ratios = data.get('key_ratios', {})
+    pipeline = data.get('pipeline', {})
+    episodes = data.get('episodes', {})
+    archetypes = data.get('archetypes', {})
+    data_summary = data.get('data_summary', {})
+    phase3_duration = data.get('phase3_duration', {})
+    return {
+        'priority': pipeline.get('priority', 'fews'),
+        'aggregation': pipeline.get('aggregation', 'max'),
+        'interpolation_gap': pipeline.get('interpolation_gap', 12),
+        'is_admin2': pipeline.get('is_admin2', False),
+        'P_4to3': key_ratios.get('P_4to3', 0),
+        'P_3to4': key_ratios.get('P_3to4', 0),
+        'ratio_4to3': key_ratios.get('ratio_4to3_over_3to4', 0),
+        'P_3to2': key_ratios.get('P_3to2', 0),
+        'P_2to3': key_ratios.get('P_2to3', 0),
+        'ratio_3to2': key_ratios.get('ratio_3to2_over_2to3', 0),
+        'episodes': episodes.get('total', 0),
+        'locations': data_summary.get('unique_locations', 0),
+        'countries': episodes.get('countries', 0),
+        'seasonal_crisis_pct': archetypes.get('percentages', {}).get('seasonal_crisis', 0),
+        'protracted_pct': archetypes.get('percentages', {}).get('protracted_emergency', 0),
+        'phase3_crossover': (phase3_duration.get('crossover', {}).get('month', None)
+                             if 'crossover' in phase3_duration else None),
+    }
+
+
+# ============================================================
+# Main Execution
+# ============================================================
+
+def main():
+    parser = argparse.ArgumentParser(description='01_reference_pipeline.py — Core analysis pipeline')
+    parser.add_argument('--phase', choices=['core', 'robustness', 'all'], default='all',
+                        help='Which phase to run: core (primary+admin2), robustness (sensitivity+verification), all (both)')
+    args = parser.parse_args()
+
+    start_time = time.time()
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    df_raw = load_hfid()
+
+    if args.phase in ('core', 'all'):
+        primary_result, primary_episodes, primary_interp, admin2_result = run_core_phase(df_raw)
+    else:
+        primary_result = primary_episodes = primary_interp = admin2_result = None
+
+    if args.phase in ('robustness', 'all'):
+        run_robustness_phase(df_raw, primary_result, primary_episodes,
+                             primary_interp, admin2_result)
+
+    # Cleanup intermediate file (only after robustness phase has consumed it)
+    if args.phase in ('robustness', 'all') and os.path.exists(INTERMEDIATE_INTERP):
+        os.remove(INTERMEDIATE_INTERP)
+        print(f"  Cleaned up: {INTERMEDIATE_INTERP}")
+
     # SUMMARY
     elapsed = time.time() - start_time
     print(f"\n{'='*70}")
-    print(f"  PIPELINE COMPLETE ({elapsed:.0f}s)")
+    print(f"  PIPELINE COMPLETE — phase={args.phase} ({elapsed:.0f}s)")
     print(f"{'='*70}")
     print(f"  All outputs saved to: {OUTPUT_DIR}/")
 
     for f in sorted(os.listdir(OUTPUT_DIR)):
+        if f.startswith('_'):
+            continue
         fpath = os.path.join(OUTPUT_DIR, f)
         size = os.path.getsize(fpath)
         print(f"    {f} ({size:,} bytes)")

@@ -5,3 +5,5 @@ venv/
 outputs/
 *.egg-info/
 .DS_Store
+data/HFID_hv1.csv
+data/naturalearth/

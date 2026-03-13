@@ -1,13 +1,26 @@
 {
-  "title": "Reproducibility Package: A Typology of Food Security Crises — Eight Archetypes from 1,658 Episodes across 51 Countries",
-  "description": "Code and data to reproduce all analyses and figures in the paper. Reads from the Harmonized Food Insecurity Dataset (HFID v1.1.1) and generates crisis episode detection, transition matrices, archetype classification, and all publication figures.",
-  "version": "1.1.0",
+  "title": "paper1a-food-crisis-typology: Reproducibility package for Reimagining Food Crises",
+  "description": "Code to reproduce all analyses and figures in 'Reimagining Food Crises: Archetypes, Collapsing Recovery Gaps, Crisis Staircases, and Recovery Traps'. Starting from the Harmonized Food Insecurity Dataset (HFID v1.1.1), the pipeline detects 1,658 food security crisis episodes across 49 countries (2007-2024), classifies them into eight archetypes, computes monthly IPC phase transition matrices with bootstrap confidence intervals, and generates all publication figures.",
+  "version": "1.0.0",
   "upload_type": "software",
+  "publication_type": "softwaredocumentation",
   "creators": [
     {
       "name": "Choularton, Richard",
-      "affiliation": "Lund University",
-      "orcid": ""
+      "affiliation": "Division of Risk Management and Societal Safety, Lund University; United Nations World Food Programme, Rome, Italy",
+      "orcid": "0000-0003-3275-2883"
+    },
+    {
+      "name": "Krishnamurthy, Krishna",
+      "affiliation": "Meru Labs, Panama City, Panama"
+    },
+    {
+      "name": "Bauer, Jean Martin",
+      "affiliation": "United Nations World Food Programme, Rome, Italy"
+    },
+    {
+      "name": "Becker, Per",
+      "affiliation": "Division of Risk Management and Societal Safety, Lund University; Swedish Defence University; Unit for Environmental Sciences and Management, North-West University"
     }
   ],
   "keywords": [
@@ -16,15 +29,17 @@
     "crisis typology",
     "food crisis archetypes",
     "transition analysis",
+    "recovery asymmetry",
     "HFID",
     "reproducibility"
   ],
   "license": "MIT",
+  "language": "eng",
   "related_identifiers": [
     {
       "relation": "isSupplementTo",
-      "identifier": "",
-      "resource_type": "publication-article",
+      "identifier": "10.5281/zenodo.15017473",
+      "resource_type": "dataset",
       "scheme": "doi"
     }
   ],

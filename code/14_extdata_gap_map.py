@@ -29,8 +29,8 @@ Inputs (relative to package root):
         Admin1 centroid coordinates
 
 Outputs (relative to package root):
-    outputs/figures/ExtData_gap_compression_map.png     (300 dpi)
-    outputs/figures/ExtData_gap_compression_map.pdf
+    outputs/figures/ExtDataFig_gap_compression_map.png     (300 dpi)
+    outputs/figures/ExtDataFig_gap_compression_map.pdf
 
 Dependencies: pandas, numpy, matplotlib, geopandas (optional)
 
@@ -93,19 +93,66 @@ plt.rcParams.update({
 # Helper functions (unchanged from source)
 # ============================================================
 
+def _download_ne(zipname, ne_dir=None):
+    """Download and extract a Natural Earth zip file if not already present."""
+    if ne_dir is None:
+        ne_dir = NE_DIR
+    shp_file = os.path.join(ne_dir, zipname.replace('.zip', '.shp'))
+    if not os.path.exists(shp_file):
+        os.makedirs(ne_dir, exist_ok=True)
+        url = (f"https://naturalearth.s3.amazonaws.com/"
+               f"{'110m' if '110m' in zipname else '10m'}_cultural/{zipname}")
+        zip_path = os.path.join(ne_dir, zipname)
+        print(f"  Downloading {zipname}...")
+        try:
+            urllib.request.urlretrieve(url, zip_path)
+        except Exception as e:
+            print(f"Warning: Could not download {url}: {e}")
+            return None
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            z.extractall(ne_dir)
+    return shp_file
+
+
 def get_world_map():
     """Get world country boundaries from Natural Earth."""
-    shp_file = os.path.join(NE_DIR, 'ne_110m_admin_0_countries.shp')
-    if not os.path.exists(shp_file):
-        print("Downloading Natural Earth data...")
-        os.makedirs(NE_DIR, exist_ok=True)
-        url = ("https://naturalearth.s3.amazonaws.com/110m_cultural/"
-               "ne_110m_admin_0_countries.zip")
-        zip_path = os.path.join(NE_DIR, "ne_110m_admin_0_countries.zip")
-        urllib.request.urlretrieve(url, zip_path)
-        with zipfile.ZipFile(zip_path, 'r') as z:
-            z.extractall(NE_DIR)
+    shp_file = _download_ne('ne_110m_admin_0_countries.zip')
+    if shp_file is None:
+        print("Could not obtain world map data.")
+        sys.exit(1)
     return gpd.read_file(shp_file)
+
+
+def get_admin1_centroids(iso3_list):
+    """Compute admin1 centroids from Natural Earth 10m admin1 shapefile.
+
+    Used as fallback when admin1_centroids.csv is not available.
+    Downloads the Natural Earth 10m admin-1 states/provinces shapefile,
+    filters to the relevant countries, and computes centroids.
+    """
+    shp_file = _download_ne('ne_10m_admin_1_states_provinces.zip')
+    if shp_file is None:
+        return None
+
+    print("  Computing admin1 centroids from Natural Earth shapefile...")
+    admin1 = gpd.read_file(shp_file)
+
+    # Filter to countries in our dataset
+    admin1 = admin1[admin1['adm0_a3'].isin(iso3_list)].copy()
+
+    # Compute centroids
+    centroids_geom = admin1.geometry.centroid
+    result = pd.DataFrame({
+        'iso3': admin1['adm0_a3'].values,
+        'ADMIN0': admin1['admin'].values,
+        'ADMIN1': admin1['name'].values,
+        'centroid_lat': centroids_geom.y.values,
+        'centroid_lon': centroids_geom.x.values,
+    })
+
+    print(f"  Computed {len(result)} admin1 centroids "
+          f"for {result['iso3'].nunique()} countries")
+    return result
 
 
 def classify_pattern(row):
@@ -222,8 +269,17 @@ def create_figure():
     else:
         loc_df = build_location_summaries_from_episodes(episodes)
 
-    # Load centroids
-    centroids = pd.read_csv(CENTROID_FILE)
+    # Load centroids (CSV if available, otherwise compute from Natural Earth)
+    if os.path.exists(CENTROID_FILE):
+        centroids = pd.read_csv(CENTROID_FILE)
+    else:
+        print(f"  Centroids CSV not found at {CENTROID_FILE}")
+        print("  Computing centroids from Natural Earth admin1 shapefile...")
+        iso3_list = episodes['iso3'].unique().tolist()
+        centroids = get_admin1_centroids(iso3_list)
+        if centroids is None:
+            print("  ERROR: Could not compute centroids. Skipping map figure.")
+            return
 
     # Filter to 3+ episodes
     loc_3plus = loc_df[loc_df['total_episodes'] >= 3].copy()
@@ -375,8 +431,8 @@ def create_figure():
 
     # Save
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    out_png = os.path.join(FIGURES_DIR, 'ExtData_gap_compression_map.png')
-    out_pdf = os.path.join(FIGURES_DIR, 'ExtData_gap_compression_map.pdf')
+    out_png = os.path.join(FIGURES_DIR, 'ExtDataFig_gap_compression_map.png')
+    out_pdf = os.path.join(FIGURES_DIR, 'ExtDataFig_gap_compression_map.pdf')
     fig.savefig(out_png, dpi=300, bbox_inches='tight', facecolor='white')
     fig.savefig(out_pdf, bbox_inches='tight', facecolor='white')
     print(f"  Saved: {out_png}")
@@ -411,22 +467,47 @@ def create_figure():
 # Main
 # ============================================================
 
+def export_source_data():
+    """Export source data for Extended Data Figure 2 to Excel."""
+    os.makedirs(FIGURES_DIR, exist_ok=True)
+    xlsx_path = os.path.join(FIGURES_DIR, 'SourceData_EDFig2.xlsx')
+
+    episodes = pd.read_csv(EPISODES_PATH)
+    loc_df = build_location_summaries_from_episodes(episodes)
+    loc_3plus = loc_df[loc_df['total_episodes'] >= 3].copy()
+
+    # Classify patterns
+    loc_3plus['pattern'] = loc_3plus.apply(classify_pattern, axis=1)
+
+    # Gap stats
+    gap_stats = compute_gap_stats(episodes, loc_3plus)
+    export_df = loc_3plus.merge(gap_stats, on='location', how='left')
+    export_df = export_df[['location', 'iso3', 'admin1', 'total_episodes',
+                            'pattern', 'mean_gap_months', 'min_gap_months',
+                            'n_gaps']].sort_values('location')
+
+    with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+        export_df.to_excel(writer, sheet_name='location_gap_data', index=False)
+    print(f"Saved: {xlsx_path}")
+
+
 def main():
     """Generate gap compression map extended data figure."""
     if not HAS_GEOPANDAS:
-        print("geopandas is not installed. Skipping 14_extdata_gap_map.py.")
+        print("geopandas is not installed. Skipping map figure.")
         print("To generate this figure, install geopandas:")
         print("  pip install geopandas")
-        sys.exit(0)
+    else:
+        print("=" * 60)
+        print("Generating Extended Data: Gap Compression Map")
+        print("=" * 60)
+        create_figure()
+
+    # Export source data regardless of geopandas availability
+    export_source_data()
 
     print("=" * 60)
-    print("Generating Extended Data: Gap Compression Map")
-    print("=" * 60)
-
-    create_figure()
-
-    print("=" * 60)
-    print(f"Figure saved to: {FIGURES_DIR}")
+    print(f"Figures saved to: {FIGURES_DIR}")
     print("=" * 60)
 
 
