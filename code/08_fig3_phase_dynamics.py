@@ -163,6 +163,22 @@ def plot_duration_panel(ax, series, phase_num, panel_label, crossover_data=None,
         _plot_escalation(series['escalation'], series['escalation_ci_lo'],
                          series['escalation_ci_hi'])
 
+    # --- Phase 2 trap-state shading (13+ months) ---
+    if phase_num == 2:
+        # At 13+ months, escalation exceeds recovery — shade bins 4–5
+        ax.axvspan(3.5, 5.5, alpha=0.10, color=COL_ESCALATION, zorder=0)
+        # Find escalation value at bin 4 (13-24 mo) for annotation
+        esc_13 = series['escalation'][3]  # bin index 3 = 13-24 mo
+        rec_13 = series['recovery'][3]
+        ax.annotate('Escalation > recovery',
+                    xy=(4, esc_13),
+                    xytext=(2.0, esc_13 * 1.5),
+                    fontsize=6, ha='center',
+                    arrowprops=dict(arrowstyle='->', color='#555', lw=0.8,
+                                    connectionstyle='arc3,rad=0.15'),
+                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white',
+                              edgecolor='#999', alpha=0.9, linewidth=0.5))
+
     # --- Phase 3 crossover annotation with CI ---
     if phase_num == 3 and crossover_data:
         crossover_month = crossover_data.get('crossover', {}).get('month', None)
