@@ -12,7 +12,7 @@ and recovery gap compression:
       an RdYlGn colourmap (shorter gaps = red).
 
 Algorithm is identical to the source script
-``papers/paper1a/figures/ExtDataFig_gap_compression_map.py``; only the
+``papers/paper1/figures/ExtDataFig_gap_compression_map.py``; only the
 data-loading paths and output paths have been changed to read from the
 reproducibility-package directories.  Docx generation is removed.
 

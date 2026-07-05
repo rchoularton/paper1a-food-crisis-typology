@@ -13,10 +13,16 @@ Three analyses:
      area-month, measures exact agreement, within-1 agreement, direction
      of disagreement, and Cohen's kappa (computed without sklearn).
 
-  2. IPC phase vs food security input indicators
-     Compares the assigned IPC phase against the implied phase from
-     FCS (Food Consumption Score) and rCSI (Reduced Coping Strategy
-     Index) using IPC Technical Manual v3.1 reference thresholds.
+  2. IPC phase vs food security input indicators (descriptive)
+     Describes how the FCS (Food Consumption Score) and rCSI (Reduced
+     Coping Strategy Index) input proportions distribute across the
+     assigned IPC phase: per-phase summary statistics plus a
+     monotonicity check. No benchmark/threshold mapping is applied.
+     HFID's fcs_lit / rcsi_lit are population proportions on a 0-1
+     scale and do not correspond to published IPC reference-table
+     cut-offs (which are defined on different scales — e.g. the
+     official rCSI reference is a mean score, not a proportion), so no
+     "implied phase" is derived and no benchmark conclusion is drawn.
 
   3. Data source coverage patterns
      Documents how FEWS NET and CH/IPC coverage varies across countries,
@@ -28,12 +34,8 @@ Inputs (relative to package root):
 Outputs (relative to package root, written to outputs/data/hfid_consistency/):
     fewsnet_vs_ch_confusion_matrix.csv   (if overlapping records exist)
     fewsnet_vs_ch_by_country.csv         (if overlapping records exist)
-    ipc_vs_fcs_lit_confusion_matrix.csv
-    ipc_vs_fcs_lit_by_country.csv
-    fcs_lit_by_phase.csv
-    ipc_vs_rcsi_lit_confusion_matrix.csv
-    ipc_vs_rcsi_lit_by_country.csv
-    rcsi_lit_by_phase.csv
+    fcs_lit_by_phase.csv                 (descriptive: indicator stats by IPC phase)
+    rcsi_lit_by_phase.csv                (descriptive: indicator stats by IPC phase)
     source_coverage_by_year.csv
 
 Dependencies: pandas, numpy  (standard library + scientific-Python stack)
@@ -56,42 +58,16 @@ OUTPUT_DIR = os.path.join(PACKAGE_ROOT, 'outputs', 'data', 'hfid_consistency')
 
 
 # ============================================================
-# IPC BENCHMARK THRESHOLDS
+# NOTE ON IPC INPUT INDICATORS (FCS / rCSI)
 # ============================================================
-# These are the IPC Technical Manual v3.1 reference thresholds.
-# FCS and rCSI are key IPC input indicators.
-
-# Food Consumption Score (FCS) — higher = better food consumption
-# IPC benchmarks (proportion with poor/borderline consumption):
-#   Phase 1: <5% poor+borderline
-#   Phase 2: 5-20%
-#   Phase 3: 20-40%
-#   Phase 4: 40-60%
-#   Phase 5: >60%
-# In HFID, fcs_lit represents proportion with insufficient consumption (0-1 scale)
-FCS_THRESHOLDS = {
-    1: (0.0, 0.05),   # <5% insufficient
-    2: (0.05, 0.20),  # 5-20%
-    3: (0.20, 0.40),  # 20-40%
-    4: (0.40, 0.60),  # 40-60%
-    5: (0.60, 1.00),  # >60%
-}
-
-# Reduced Coping Strategy Index (rCSI) — higher = worse coping
-# IPC benchmarks (proportion using crisis-level coping):
-#   Phase 1: <5%
-#   Phase 2: 5-20%
-#   Phase 3: 20-40%
-#   Phase 4: 40-60%
-#   Phase 5: >60%
-# In HFID, rcsi_lit represents proportion in crisis coping (0-1 scale)
-RCSI_THRESHOLDS = {
-    1: (0.0, 0.05),
-    2: (0.05, 0.20),
-    3: (0.20, 0.40),
-    4: (0.40, 0.60),
-    5: (0.60, 1.00),
-}
+# Analysis 2 below treats fcs_lit and rcsi_lit *descriptively* only.
+# It deliberately does NOT map these proportions onto IPC phases via a
+# benchmark ladder. The IPC reference tables for FCS and rCSI are
+# defined on scales that do not align with HFID's 0-1 population
+# proportions (e.g. the official rCSI reference is a mean score, not a
+# share of population), so any fixed proportion-to-phase cut-off would
+# be arbitrary. We therefore report only how the indicators distribute
+# across the assigned phases, and whether they trend with phase.
 
 
 # ============================================================
@@ -155,22 +131,6 @@ def _cohens_kappa(y1, y2, weights=None):
 
     kappa = 1.0 - obs_disagreement / exp_disagreement
     return kappa
-
-
-# ============================================================
-# Helper: implied IPC phase from indicator value
-# ============================================================
-
-def get_implied_phase(value, thresholds):
-    """Given an indicator value, return the implied IPC phase."""
-    if pd.isna(value):
-        return np.nan
-    for phase, (low, high) in thresholds.items():
-        if low <= value < high:
-            return phase
-    if value >= 1.0:
-        return 5
-    return np.nan
 
 
 # ============================================================
@@ -400,10 +360,10 @@ def analyze_ipc_vs_indicators(df):
     df['ipc_phase'] = df['ipc_phase_fews'].fillna(df['ipc_phase_ipcch'])
     df.loc[df['ipc_phase'] == 6, 'ipc_phase'] = np.nan
 
-    # Check available indicators
+    # Check available indicators (described, not benchmarked)
     indicators = {
-        'fcs_lit': ('Food Consumption Score (literature)', FCS_THRESHOLDS),
-        'rcsi_lit': ('Reduced Coping Strategy Index (literature)', RCSI_THRESHOLDS),
+        'fcs_lit': 'Food Consumption Score (literature)',
+        'rcsi_lit': 'Reduced Coping Strategy Index (literature)',
     }
 
     # Also check real-time indicators if available
@@ -413,7 +373,7 @@ def analyze_ipc_vs_indicators(df):
             n = df[col].notna().sum()
             print(f"  {col}: {n:,} records available")
 
-    for indicator_col, (indicator_name, thresholds) in indicators.items():
+    for indicator_col, indicator_name in indicators.items():
         print(f"\n{'=' * 70}")
         print(f"  INDICATOR: {indicator_name} ({indicator_col})")
         print(f"{'=' * 70}")
@@ -464,91 +424,28 @@ def analyze_ipc_vs_indicators(df):
                       f"{subset.median():>8.3f} {subset.std():>8.3f} "
                       f"{subset.min():>8.3f} {subset.max():>8.3f}")
 
-        # Implied phase from indicator
-        valid['implied_phase'] = valid['indicator_value'].apply(
-            lambda v: get_implied_phase(v, thresholds)
-        )
-        valid_with_implied = valid[valid['implied_phase'].notna()].copy()
-        valid_with_implied['implied_phase'] = valid_with_implied['implied_phase'].astype(int)
-
-        # Agreement analysis
-        exact = (valid_with_implied['phase'] == valid_with_implied['implied_phase']).sum()
-        within1 = (abs(valid_with_implied['phase'] - valid_with_implied['implied_phase']) <= 1).sum()
-        total = len(valid_with_implied)
-
-        print(f"\n  --- {indicator_col} vs IPC Phase Agreement ---")
-        print(f"  Total comparable records: {total:,}")
-        print(f"  Exact match:     {exact:,} ({100*exact/total:.1f}%)")
-        print(f"  Within +/-1 phase: {within1:,} ({100*within1/total:.1f}%)")
-
-        # Direction
-        ipc_higher = (valid_with_implied['phase'] > valid_with_implied['implied_phase']).sum()
-        indicator_higher = (valid_with_implied['implied_phase'] > valid_with_implied['phase']).sum()
-        print(f"  IPC phase higher than {indicator_col} implies: "
-              f"{ipc_higher:,} ({100*ipc_higher/total:.1f}%)")
-        print(f"  {indicator_col} implies higher than IPC phase: "
-              f"{indicator_higher:,} ({100*indicator_higher/total:.1f}%)")
-
-        # Confusion matrix
-        print(f"\n  --- Confusion Matrix (rows=IPC Phase, "
-              f"cols=Implied from {indicator_col}) ---")
-        matrix = pd.crosstab(
-            valid_with_implied['phase'],
-            valid_with_implied['implied_phase'],
-            rownames=['IPC Phase'],
-            colnames=[f'Implied from {indicator_col}'],
-            margins=True
-        )
-        print(matrix.to_string())
-        matrix.to_csv(os.path.join(OUTPUT_DIR,
-                                   f'ipc_vs_{indicator_col}_confusion_matrix.csv'))
-
-        # Mean difference by phase
-        print(f"\n  --- Mean Difference (IPC - Implied) by Phase ---")
-        for phase in range(1, 6):
-            subset = valid_with_implied[valid_with_implied['phase'] == phase]
-            if len(subset) > 0:
-                diff = (subset['phase'] - subset['implied_phase']).mean()
-                print(f"    Phase {phase}: mean_diff = {diff:+.2f} (n={len(subset):,})")
-
-        # Flag systematic biases
-        overall_diff = (valid_with_implied['phase'] - valid_with_implied['implied_phase']).mean()
-        print(f"\n  Overall mean difference (IPC - Implied): {overall_diff:+.3f}")
-        if abs(overall_diff) > 0.3:
-            direction = "MORE severe" if overall_diff > 0 else "LESS severe"
-            print(f"  SYSTEMATIC BIAS: IPC classifications tend to be {direction} "
-                  f"than {indicator_col} implies")
-
-        # By country
-        print(f"\n  --- Agreement by Country (top 15) ---")
-        country_stats = []
-        for iso3, group in valid_with_implied.groupby('iso3'):
-            ex = (group['phase'] == group['implied_phase']).mean()
-            w1 = (abs(group['phase'] - group['implied_phase']) <= 1).mean()
-            md = (group['phase'] - group['implied_phase']).mean()
-            country_stats.append({
-                'iso3': iso3,
-                'n': len(group),
-                'exact_pct': round(100 * ex, 1),
-                'within1_pct': round(100 * w1, 1),
-                'mean_diff': round(md, 3)
-            })
-        cs_df = pd.DataFrame(country_stats).sort_values('n', ascending=False)
-        print(cs_df.head(15).to_string(index=False))
-        cs_df.to_csv(os.path.join(OUTPUT_DIR,
-                                  f'ipc_vs_{indicator_col}_by_country.csv'), index=False)
-
-        # Monotonicity check: does the indicator increase/decrease
-        # consistently with phase?
-        print(f"\n  --- Monotonicity Check ---")
+        # Trend check: do the indicator means rise with assigned phase?
+        # Reported descriptively — no benchmark mapping, no "implied phase".
+        print(f"\n  --- Trend across phases (descriptive) ---")
+        present_phases = [p for p in range(1, 6)
+                          if len(valid[valid['phase'] == p]) > 0]
         means = [valid[valid['phase'] == p]['indicator_value'].mean()
-                 for p in range(1, 6) if len(valid[valid['phase'] == p]) > 0]
-        is_monotonic = all(means[i] <= means[i+1] for i in range(len(means)-1))
-        print(f"  Phase means: {[f'{m:.3f}' for m in means]}")
-        print(f"  Monotonically increasing with phase: "
+                 for p in present_phases]
+        is_monotonic = all(means[i] <= means[i + 1] for i in range(len(means) - 1))
+        pairs = ", ".join(f"P{p}={m:.3f}" for p, m in zip(present_phases, means))
+        print(f"  Phases present: {present_phases}")
+        print(f"  Phase means: {pairs}")
+        print(f"  Strictly non-decreasing across all present phases: "
               f"{'YES' if is_monotonic else 'NO'}")
+        if not is_monotonic:
+            # Report where the rise stops, rather than overstating the trend.
+            for i in range(len(means) - 1):
+                if means[i] > means[i + 1]:
+                    print(f"    Note: mean does not rise from "
+                          f"Phase {present_phases[i]} ({means[i]:.3f}) to "
+                          f"Phase {present_phases[i + 1]} ({means[i + 1]:.3f}).")
 
-        # Save phase stats
+        # Save phase stats (the descriptive signal that feeds ED Table 4 Panel B)
         pd.DataFrame(phase_stats).to_csv(
             os.path.join(OUTPUT_DIR, f'{indicator_col}_by_phase.csv'), index=False)
 
@@ -561,12 +458,9 @@ def analyze_ipc_vs_indicators(df):
             continue
 
         print(f"\n{'=' * 70}")
-        print(f"  REAL-TIME INDICATOR: {rt_col}")
+        print(f"  REAL-TIME INDICATOR: {rt_col} (descriptive)")
         print(f"{'=' * 70}")
         valid_rt['phase'] = valid_rt['ipc_phase'].astype(int)
-
-        # Use same thresholds as literature version
-        thresholds = FCS_THRESHOLDS if 'fcs' in rt_col else RCSI_THRESHOLDS
 
         print(f"  Records: {len(valid_rt):,}")
         print(f"\n  Statistics by IPC Phase:")
@@ -576,18 +470,6 @@ def analyze_ipc_vs_indicators(df):
             if len(subset) > 0:
                 print(f"  {phase:>6} {len(subset):>8,} {subset.mean():>8.3f} "
                       f"{subset.median():>8.3f} {subset.std():>8.3f}")
-
-        # Implied phase
-        valid_rt['implied_phase'] = valid_rt[rt_col].astype(float).apply(
-            lambda v: get_implied_phase(v, thresholds)
-        )
-        vri = valid_rt[valid_rt['implied_phase'].notna()].copy()
-        if len(vri) > 0:
-            vri['implied_phase'] = vri['implied_phase'].astype(int)
-            exact = (vri['phase'] == vri['implied_phase']).mean()
-            within1 = (abs(vri['phase'] - vri['implied_phase']) <= 1).mean()
-            print(f"\n  Exact match: {100*exact:.1f}%")
-            print(f"  Within +/-1:   {100*within1:.1f}%")
 
 
 # ============================================================
