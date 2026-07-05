@@ -15,7 +15,7 @@ This dataset contains the processed analytical data and per-figure source data g
 ## Provenance
 
 - **Source data:** HFID v1.1.1 (Machefer et al. 2025), DOI: 10.5281/zenodo.15017473
-- **Analysis code:** https://github.com/rchoularton/crisis-archetype-analysis
+- **Analysis code:** https://github.com/rchoularton/paper1a-food-crisis-typology
 - **Pipeline:** 12-step Python pipeline; see code repository README for full details
 - **Reference configuration:** FEWS priority, MAX aggregation, 12-month interpolation, left-censored included
 
@@ -78,8 +78,8 @@ This dataset contains the processed analytical data and per-figure source data g
 All files can be regenerated from the HFID source data using:
 
 ```bash
-git clone https://github.com/rchoularton/crisis-archetype-analysis
-cd crisis-archetype-analysis
+git clone https://github.com/rchoularton/paper1a-food-crisis-typology
+cd paper1a-food-crisis-typology
 pip install -r requirements.txt
 # Place HFID_hv1.csv in data/
 python run_all.py

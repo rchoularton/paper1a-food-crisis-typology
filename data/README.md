@@ -3,9 +3,9 @@
 ## HFID_hv1.csv — Harmonized Food Insecurity Dataset v1.1.1
 
 **Citation:**
-Machefer, M., Charpentier, A., Chotard, S., & Machefer, M. (2025).
+Machefer, M. et al. (2025).
 Harmonized Food Insecurity Dataset (HFID) v1.1.1.
-https://doi.org/10.5281/zenodo.14593822
+https://doi.org/10.5281/zenodo.15017473
 
 **Description:**
 Monthly subnational food security classifications from two complementary systems:
@@ -32,7 +32,7 @@ Monthly subnational food security classifications from two complementary systems
 
 **License:** CC-BY-4.0
 
-**Original download:** https://zenodo.org/records/14593822
+**Original download:** https://zenodo.org/records/15017473
 
 ---
 
