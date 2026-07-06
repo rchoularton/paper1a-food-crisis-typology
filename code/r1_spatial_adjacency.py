@@ -45,6 +45,9 @@ from reference_transition_analysis import (  # noqa: E402
 
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'outputs', 'data')
 GEOM_PATH = os.path.join(PROJECT_ROOT, 'data', 'hfid', 'simplified_hfid_geom.gpkg')
+if not os.path.exists(GEOM_PATH):
+    # Code Ocean / self-contained package: geometry shipped alongside the scripts
+    GEOM_PATH = os.path.join(SCRIPT_DIR, 'simplified_hfid_geom.gpkg')
 EPISODES_CSV = os.path.join(OUTPUT_DIR, 'episodes.csv')
 CRISIS_THRESHOLD = 3
 # Adjacency tolerance (degrees). Simplified polygons have slivers/gaps, so
