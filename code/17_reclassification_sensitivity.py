@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# @status:   maturing
+# @status:   canonical
 # @process:  P6-audit-v24
 # @paper:    paper1
 """
