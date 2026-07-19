@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 08_fig3_phase_dynamics.py — Figure 3: Phase Persistence and Transition Dynamics
 =================================================================================

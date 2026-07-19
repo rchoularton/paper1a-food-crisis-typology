@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 07_fig2_alluvial.py — Figure 2: Annual Archetype Evolution (2016 Cohort)
 =========================================================================

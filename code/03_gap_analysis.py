@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 03_gap_analysis.py — Comprehensive Gap Analysis Between Crisis Episodes
 ========================================================================

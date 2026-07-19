@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 06_fig1_archetypes.py — Figure 1: Crisis Archetype Scatter Plot
 ================================================================

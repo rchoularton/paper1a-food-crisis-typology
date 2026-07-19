@@ -48,7 +48,7 @@ This code is also available as an executable [Code Ocean compute capsule 4157994
 ## Quick Start
 
 ```bash
-python run_all.py                   # Run all 18 steps
+python run_all.py                   # Run all 21 steps
 ```
 
 Expected runtime: **20-30 minutes** on a modern laptop (most time is spent on bootstrap confidence intervals in step 01).
@@ -57,9 +57,9 @@ Expected runtime: **20-30 minutes** on a modern laptop (most time is spent on bo
 
 ```bash
 python run_all.py --step 1          # Run only step 1
-python run_all.py --analysis-only   # Steps 01-10 (data analysis)
-python run_all.py --figures-only    # Steps 11-17 (figures, requires analysis steps first)
-python run_all.py --step 18         # Validation suite only
+python run_all.py --analysis-only   # Steps 01-12 (data analysis)
+python run_all.py --figures-only    # Steps 13-19 (figures, requires analysis steps first)
+python run_all.py --step 20         # Validation suite only
 ```
 
 ## Pipeline Overview
@@ -109,20 +109,29 @@ data/HFID_hv1.csv
        |
        v
 +--------------------------------------------------------------+
-| Publication figures (PNG + PDF + Source Data)                 |
-|   step 11 -- 06_fig1_archetypes.py         (Figure 1)         |
-|   step 12 -- 07_fig2_alluvial.py           (Figure 2)         |
-|   step 13 -- 08_fig3_phase_dynamics.py     (Figure 3)         |
-|   step 14 -- 12_extdata_staircase.py       (ED Fig 1)         |
-|   step 15 -- 13_extdata_gap_compression.py (Figure 4)         |
-|   step 16 -- 14_extdata_gap_map.py         (ED Fig 2)         |
-|   step 17 -- 15_extdata_spatial.py         (ED Fig 3)         |
+| v24 audit additions                                           |
+|   step 11 -- 17_reclassification_sensitivity.py (Methods L78) |
+|   step 12 -- 18_monitoring_expansion.py         (Results L97) |
 +------+-------------------------------------------------------+
        |
        v
 +--------------------------------------------------------------+
-| step 18 -- 16_validation_suite.py                             |
+| Publication figures (PNG + PDF + Source Data)                 |
+|   step 13 -- 06_fig1_archetypes.py         (Figure 1)         |
+|   step 14 -- 07_fig2_alluvial.py           (Figure 2)         |
+|   step 15 -- 08_fig3_phase_dynamics.py     (Figure 3)         |
+|   step 16 -- 12_extdata_staircase.py       (ED Fig 1)         |
+|   step 17 -- 13_extdata_gap_compression.py (Figure 4)         |
+|   step 18 -- 14_extdata_gap_map.py         (ED Fig 2)         |
+|   step 19 -- 15_extdata_spatial.py         (ED Fig 3)         |
++------+-------------------------------------------------------+
+       |
+       v
++--------------------------------------------------------------+
+| step 20 -- 16_validation_suite.py                             |
 |            1,704 classification test cases                    |
+| step 21 -- 19_config_parity.py                                |
+|            constant-drift guard (passes standalone)           |
 +--------------------------------------------------------------+
 ```
 
@@ -140,14 +149,17 @@ data/HFID_hv1.csv
 | 08 | `r1_spatial_extent.py` | **R1.4:** national crisis footprint (admin1 areas at Phase 3+) by archetype over the episode life cycle (**ED Fig 3a**) | `r1_spatial_extent_by_archetype.json`, `r1_spatial_extent_by_episode.csv` |
 | 09 | `r1_spatial_adjacency.py` | **R1.4:** neighbour co-escalation from within-country admin1 adjacency built off the HFID geometry (**ED Fig 3b**; requires geopandas) | `r1_admin1_adjacency.csv`, `r1_spatial_adjacency_by_archetype.json`, `r1_spatial_adjacency_by_episode.csv` |
 | 10 | `r1_source_unit_composition.py` | **R3.7/R3.9:** FEWS-vs-IPC/CH source mix, carried-forward share, and admin1/admin2 unit composition | `r1_source_unit_composition.json` |
-| 11 | `06_fig1_archetypes.py` | **Figure 1:** Scatter plot of 8 archetypes (duration × severity) with zone-band design | `Figure1_archetype_scatter.png/.pdf`, `SourceData_Fig1.xlsx` |
-| 12 | `07_fig2_alluvial.py` | **Figure 2:** Annual alluvial diagram showing archetype evolution (2016 cohort) | `Figure2_combined_alluvial.png/.pdf`, `SourceData_Fig2.xlsx` |
-| 13 | `08_fig3_phase_dynamics.py` | **Figure 3:** 6-panel grid showing transition matrix, asymmetry, and duration effects | `Figure3_recovery_asymmetry.png/.pdf`, `SourceData_Fig3.xlsx` |
-| 14 | `12_extdata_staircase.py` | **Extended Data Fig 1:** Crisis staircase diagram | `Figure_crisis_staircase.png/.pdf`, `SourceData_EDFig1.xlsx` |
-| 15 | `13_extdata_gap_compression.py` | **Figure 4:** Gap compression dual-panel and escalation risk | `Figure4_gap_compression.png/.pdf`, `SourceData_Fig4.xlsx` |
-| 16 | `14_extdata_gap_map.py` | **Extended Data Fig 2:** Geographic map of gap patterns (requires geopandas) | `ExtDataFig_gap_compression_map.png/.pdf`, `SourceData_EDFig2.xlsx` |
-| 17 | `15_extdata_spatial.py` | **Extended Data Fig 3:** Spatial dynamics by archetype — footprint (a) + neighbour co-escalation (b) | `ExtDataFig_spatial_dynamics.png/.pdf`, `SourceData_EDFig3.xlsx` |
-| 18 | `16_validation_suite.py` | **Validation:** 35 unit + 11 boundary + 1,658 cross-validation test cases against the deposited `episodes.csv` (1,704 total) | `validation_suite_report.json` |
+| 11 | `17_reclassification_sensitivity.py` | **v24 audit A2:** per-episode reclassification rate across all sensitivity variants, matched on location + onset month against the primary baseline (Methods interpolation claim) | `reclassification_sensitivity.json` |
+| 12 | `18_monitoring_expansion.py` | **v24 audit A3:** monitoring-expansion share of crisis-location growth, 2016 cohort vs full set, with window and subject emitted alongside the result (Results monitoring claim) | `monitoring_expansion_share.json` |
+| 13 | `06_fig1_archetypes.py` | **Figure 1:** Scatter plot of 8 archetypes (duration × severity) with zone-band design | `Figure1_archetype_scatter.png/.pdf`, `SourceData_Fig1.xlsx` |
+| 14 | `07_fig2_alluvial.py` | **Figure 2:** Annual alluvial diagram showing archetype evolution (2016 cohort) | `Figure2_combined_alluvial.png/.pdf`, `SourceData_Fig2.xlsx` |
+| 15 | `08_fig3_phase_dynamics.py` | **Figure 3:** 6-panel grid showing transition matrix, asymmetry, and duration effects | `Figure3_recovery_asymmetry.png/.pdf`, `SourceData_Fig3.xlsx` |
+| 16 | `12_extdata_staircase.py` | **Extended Data Fig 1:** Crisis staircase diagram | `Figure_crisis_staircase.png/.pdf`, `SourceData_EDFig1.xlsx` |
+| 17 | `13_extdata_gap_compression.py` | **Figure 4:** Gap compression dual-panel and escalation risk | `Figure4_gap_compression.png/.pdf`, `SourceData_Fig4.xlsx` |
+| 18 | `14_extdata_gap_map.py` | **Extended Data Fig 2:** Geographic map of gap patterns (requires geopandas) | `ExtDataFig_gap_compression_map.png/.pdf`, `SourceData_EDFig2.xlsx` |
+| 19 | `15_extdata_spatial.py` | **Extended Data Fig 3:** Spatial dynamics by archetype — footprint (a) + neighbour co-escalation (b) | `ExtDataFig_spatial_dynamics.png/.pdf`, `SourceData_EDFig3.xlsx` |
+| 20 | `16_validation_suite.py` | **Validation:** 35 unit + 11 boundary + 1,658 cross-validation test cases against the deposited `episodes.csv` (1,704 total) | `validation_suite_report.json` |
+| 21 | `19_config_parity.py` | **Guard:** fails if the pipeline's hardcoded constants drift from the project `config.py` (direct compare + classification boundary probes); passes with a notice when run standalone | console report |
 
 ## Output Manifest
 
@@ -164,13 +176,13 @@ data/HFID_hv1.csv
 
 | Paper Figure | Code Step | Output File |
 |---|---|---|
-| Figure 1: Archetype scatter | Step 11 | `outputs/figures/Figure1_archetype_scatter.png` |
-| Figure 2: Alluvial transitions | Step 12 | `outputs/figures/Figure2_combined_alluvial.png` |
-| Figure 3: Phase dynamics 6-panel | Step 13 | `outputs/figures/Figure3_recovery_asymmetry.png` |
-| Figure 4: Gap compression dual-panel | Step 15 | `outputs/figures/Figure4_gap_compression.png` |
-| Extended Data Fig 1: Crisis staircase | Step 14 | `outputs/figures/Figure_crisis_staircase.png` |
-| Extended Data Fig 2: Gap map | Step 16 | `outputs/figures/ExtDataFig_gap_compression_map.png` |
-| Extended Data Fig 3: Spatial dynamics | Step 17 | `outputs/figures/ExtDataFig_spatial_dynamics.png` |
+| Figure 1: Archetype scatter | Step 13 | `outputs/figures/Figure1_archetype_scatter.png` |
+| Figure 2: Alluvial transitions | Step 14 | `outputs/figures/Figure2_combined_alluvial.png` |
+| Figure 3: Phase dynamics 6-panel | Step 15 | `outputs/figures/Figure3_recovery_asymmetry.png` |
+| Figure 4: Gap compression dual-panel | Step 17 | `outputs/figures/Figure4_gap_compression.png` |
+| Extended Data Fig 1: Crisis staircase | Step 16 | `outputs/figures/Figure_crisis_staircase.png` |
+| Extended Data Fig 2: Gap map | Step 18 | `outputs/figures/ExtDataFig_gap_compression_map.png` |
+| Extended Data Fig 3: Spatial dynamics | Step 19 | `outputs/figures/ExtDataFig_spatial_dynamics.png` |
 | Extended Data Table 6: Robustness (jackknife) | Step 07 | `outputs/data/r1_jackknife_robustness.json` |
 
 ### Source Data Files (Nature Food requirement)
@@ -185,6 +197,7 @@ Each figure script also generates an Excel file with the underlying data:
 | `SourceData_Fig4.xlsx` | Yearly gap statistics and escalation risk by gap bin |
 | `SourceData_EDFig1.xlsx` | Archetype-to-archetype transition counts |
 | `SourceData_EDFig2.xlsx` | Location-level gap data with trajectory classification |
+| `SourceData_EDFig3.xlsx` | Footprint (n_fp) and co-escalation (n_co) medians per archetype |
 
 ## Expected Runtime
 
@@ -197,8 +210,11 @@ Each figure script also generates an Excel file with the underlying data:
 | 06 | HFID consistency | <30 sec |
 | 07 | Jackknife robustness (re-runs pipeline per country) | 3-6 min |
 | 08-10 | Spatial extent, adjacency, source/unit composition | 1-3 min |
-| 11-17 | All figures | 1-2 min total |
-| **Total** | | **20-30 min** |
+| 11 | Reclassification sensitivity (re-runs 9 variants) | 10-15 min |
+| 12 | Monitoring-expansion share | <30 sec |
+| 13-19 | All figures | 1-2 min total |
+| 20-21 | Validation suite + config parity | 1-2 min |
+| **Total** | | **35-50 min** |
 
 ## Data Sources
 

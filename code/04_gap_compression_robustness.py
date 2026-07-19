@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P3
+# @paper:    paper1
 """
 04_gap_compression_robustness.py — Robustness Check for Gap Compression
 ========================================================================

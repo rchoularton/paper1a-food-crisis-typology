@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   import
+# @process:  shared
+# @paper:    paper1
 """
 reference_transition_analysis.py — import shim for the revision robustness scripts.
 ==================================================================================

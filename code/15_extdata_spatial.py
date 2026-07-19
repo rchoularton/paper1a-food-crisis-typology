@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P6-revision
+# @paper:    paper1
 """
 Extended Data Figure: Spatial dynamics of crises by archetype (R1.4).
 
@@ -69,7 +72,7 @@ def _by_archetype(path, value_col):
     return g
 
 
-def export_source_data(order, fp_med, co_med, co_mean, n):
+def export_source_data(order, fp_med, co_med, co_mean, n_fp, n_co):
     """Export source data for Extended Data Figure 3 to Excel."""
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     xlsx_path = FIG_DIR / 'SourceData_EDFig3.xlsx'
@@ -78,7 +81,7 @@ def export_source_data(order, fp_med, co_med, co_mean, n):
     panel_a = pd.DataFrame({
         'archetype': [LABELS[a] for a in order],
         'net_footprint_ratio_median': [round(fp_med[a], 4) for a in order],
-        'n_episodes': [n[a] for a in order],
+        'n_episodes': [n_fp[a] for a in order],
     })
 
     # Panel b: net neighbour co-escalation, median bars + mean diamonds
@@ -86,7 +89,7 @@ def export_source_data(order, fp_med, co_med, co_mean, n):
         'archetype': [LABELS[a] for a in order],
         'co_escalation_net_median': [round(co_med[a], 4) for a in order],
         'co_escalation_net_mean': [round(co_mean[a], 4) for a in order],
-        'n_episodes': [n[a] for a in order],
+        'n_episodes': [n_co[a] for a in order],
     })
 
     with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
@@ -103,7 +106,10 @@ def main():
     fp_med = {a: st.median(fp_vals[a]) for a in archs}
     co_med = {a: st.median(co_vals[a]) for a in archs}
     co_mean = {a: st.mean(co_vals[a]) for a in archs}
-    n = {a: len(co_vals[a]) for a in archs}
+    # panel (a) and panel (b) rest on different episode sets: every episode has a
+    # footprint, only those with a mapped neighbour set have co-escalation
+    n_fp = {a: len(fp_vals[a]) for a in archs}
+    n_co = {a: len(co_vals[a]) for a in archs}
 
     # order by primary measure (footprint median), tie-break by mean co-escalation
     order = sorted(archs, key=lambda a: (fp_med[a], co_mean[a]))
@@ -111,9 +117,10 @@ def main():
     colors = [C_STABLE if a in STABLE else C_EXPAND for a in order]
     y = np.arange(len(order))
 
-    print(f"{'archetype':22} fp_median  co_median  co_mean  n")
+    print(f"{'archetype':22} fp_median  co_median  co_mean  n_fp  n_co")
     for a in order:
-        print(f"{a:22} {fp_med[a]:.2f}       {co_med[a]:.2f}      {co_mean[a]:.3f}   {n[a]}")
+        print(f"{a:22} {fp_med[a]:.2f}       {co_med[a]:.2f}      {co_mean[a]:.3f}   "
+              f"{n_fp[a]:<5} {n_co[a]}")
 
     fig, (axa, axb) = plt.subplots(1, 2, figsize=(7.4, 3.4), sharey=True)
 
@@ -126,7 +133,7 @@ def main():
     axa.set_title('a', loc='left', fontweight='bold')
     axa.axvline(1.0, color='black', linewidth=0.5, linestyle='--')
     for yi, a in enumerate(order):
-        axa.text(fp_med[a] + 0.012, yi, f'{fp_med[a]:.2f} (n={n[a]})', va='center', fontsize=6.3)
+        axa.text(fp_med[a] + 0.012, yi, f'{fp_med[a]:.2f} (n={n_fp[a]})', va='center', fontsize=6.3)
     axa.set_xlim(0.9, max(fp) + 0.16)
 
     # Panel b — SECONDARY: neighbour co-escalation, median bars + mean diamonds
@@ -154,7 +161,7 @@ def main():
         fig.savefig(FIG_DIR / f'ExtDataFig_spatial_dynamics.{ext_}', bbox_inches='tight')
     print(f"Saved ExtDataFig_spatial_dynamics.png / .pdf to {FIG_DIR}")
 
-    export_source_data(order, fp_med, co_med, co_mean, n)
+    export_source_data(order, fp_med, co_med, co_mean, n_fp, n_co)
 
 
 if __name__ == '__main__':

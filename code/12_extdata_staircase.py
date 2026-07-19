@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 12_extdata_staircase.py -- Extended Data Figure 1: Crisis Staircase
 =====================================================================

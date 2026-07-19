@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 02_generate_transitions.py — Archetype Transition Generation
 =============================================================

@@ -7,11 +7,11 @@ Runs the full Paper 1A analysis pipeline from raw HFID data to publication
 figures. Each step is executed as a subprocess so failures are isolated.
 
 Usage:
-    python run_all.py              # Run all 18 steps
+    python run_all.py              # Run all 21 steps
     python run_all.py --step 6     # Run only step 6
-    python run_all.py --analysis-only   # Steps 01-10 only
-    python run_all.py --figures-only    # Steps 11-17 only
-    python run_all.py --step 18         # Validation suite only
+    python run_all.py --analysis-only   # Steps 01-12 only
+    python run_all.py --figures-only    # Steps 13-19 only
+    python run_all.py --step 20         # Validation suite only
 
 Expected runtime: ~20-30 minutes total on a modern laptop.
 """
@@ -39,16 +39,19 @@ STEPS = [
     (8,  'r1_spatial_extent.py',           'R1.4: national footprint by archetype (ED Fig 3a)',     False, []),
     (9,  'r1_spatial_adjacency.py',        'R1.4: neighbour co-escalation (ED Fig 3b; needs geopandas)', False, []),
     (10, 'r1_source_unit_composition.py',  'R3.7/R3.9: source mix + admin1/admin2 unit composition', False, []),
-    # --- Figures (steps 11-17) ---
-    (11, '06_fig1_archetypes.py',          'Figure 1: archetype scatter plot',                      False, []),
-    (12, '07_fig2_alluvial.py',            'Figure 2: alluvial transitions',                        False, []),
-    (13, '08_fig3_phase_dynamics.py',      'Figure 3: recovery asymmetry (6-panel)',                 False, []),
-    (14, '12_extdata_staircase.py',        'Extended Data Fig 1: crisis staircase',                 False, []),
-    (15, '13_extdata_gap_compression.py',  'Figure 4: gap compression dual-panel',                   False, []),
-    (16, '14_extdata_gap_map.py',          'Extended Data Fig 2: geographic map',                    False, []),
-    (17, '15_extdata_spatial.py',          'Extended Data Fig 3: spatial dynamics by archetype',    False, []),
-    # --- Validation (step 18) ---
-    (18, '16_validation_suite.py',         'Validation suite: 1,704 classification test cases',    False, []),
+    (11, '17_reclassification_sensitivity.py', 'v24 A2: per-episode reclassification across variants', False, []),
+    (12, '18_monitoring_expansion.py',     'v24 A3: monitoring-expansion share of crisis growth',   False, []),
+    # --- Figures (steps 13-19) ---
+    (13, '06_fig1_archetypes.py',          'Figure 1: archetype scatter plot',                      False, []),
+    (14, '07_fig2_alluvial.py',            'Figure 2: alluvial transitions',                        False, []),
+    (15, '08_fig3_phase_dynamics.py',      'Figure 3: recovery asymmetry (6-panel)',                 False, []),
+    (16, '12_extdata_staircase.py',        'Extended Data Fig 1: crisis staircase',                 False, []),
+    (17, '13_extdata_gap_compression.py',  'Figure 4: gap compression dual-panel',                   False, []),
+    (18, '14_extdata_gap_map.py',          'Extended Data Fig 2: geographic map',                    False, []),
+    (19, '15_extdata_spatial.py',          'Extended Data Fig 3: spatial dynamics by archetype',    False, []),
+    # --- Validation (steps 20-21) ---
+    (20, '16_validation_suite.py',         'Validation suite: 1,704 classification test cases',    False, []),
+    (21, '19_config_parity.py',            'Config parity: constants vs project config.py',        False, []),
 ]
 
 
@@ -140,9 +143,9 @@ def main():
             print(f"\nERROR: Step {args.step} not found. Valid steps: 1-18")
             sys.exit(1)
     elif args.analysis_only:
-        steps_to_run = [s for s in STEPS if s[0] <= 10]
+        steps_to_run = [s for s in STEPS if s[0] <= 12]
     elif args.figures_only:
-        steps_to_run = [s for s in STEPS if 11 <= s[0] <= 17]
+        steps_to_run = [s for s in STEPS if 13 <= s[0] <= 19]
     else:
         steps_to_run = STEPS
 

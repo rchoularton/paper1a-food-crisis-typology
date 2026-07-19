@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 14_extdata_gap_map.py -- Extended Data Figure: Gap Compression Map
 ===================================================================

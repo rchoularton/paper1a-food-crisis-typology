@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P3
+# @paper:    paper1
 """
 05_hfid_consistency.py — HFID Data Consistency Analysis
 ========================================================

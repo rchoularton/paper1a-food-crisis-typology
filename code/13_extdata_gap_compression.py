@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# @status:   maturing
+# @process:  P2
+# @paper:    paper1
 """
 13_extdata_gap_compression.py -- Figure 4: Gap Compression Dual-Panel
 =======================================================================
