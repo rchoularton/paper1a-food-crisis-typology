@@ -31,7 +31,7 @@ This dataset contains the processed analytical data and per-figure source data g
 | `full_transition_matrix.json` | Monthly IPC phase transition probabilities (5x5) with bootstrap CIs | - |
 | `phase{1-5}_duration_conditioned.json` | Duration-conditioned transition probabilities per phase | - |
 | `phase3_crossover.json` | Phase 3 recovery-escalation crossover analysis with decay fit | - |
-| `sensitivity_summary.csv` | 9-variant sensitivity analysis results | 9 |
+| `sensitivity_summary.csv` | 10-variant sensitivity analysis results | 10 |
 | `location_gap_patterns.csv` | Per-location gap duration statistics | ~400 |
 | `country_gap_patterns.csv` | Per-country gap aggregates | ~45 |
 | `within_location_gap_trends.csv` | Within-location gap compression trends | ~200 |

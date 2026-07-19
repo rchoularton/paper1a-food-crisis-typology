@@ -7,10 +7,11 @@ Runs the full Paper 1A analysis pipeline from raw HFID data to publication
 figures. Each step is executed as a subprocess so failures are isolated.
 
 Usage:
-    python run_all.py              # Run all 17 steps
+    python run_all.py              # Run all 18 steps
     python run_all.py --step 6     # Run only step 6
     python run_all.py --analysis-only   # Steps 01-10 only
     python run_all.py --figures-only    # Steps 11-17 only
+    python run_all.py --step 18         # Validation suite only
 
 Expected runtime: ~20-30 minutes total on a modern laptop.
 """
@@ -44,8 +45,10 @@ STEPS = [
     (13, '08_fig3_phase_dynamics.py',      'Figure 3: recovery asymmetry (6-panel)',                 False, []),
     (14, '12_extdata_staircase.py',        'Extended Data Fig 1: crisis staircase',                 False, []),
     (15, '13_extdata_gap_compression.py',  'Figure 4: gap compression dual-panel',                   False, []),
-    (16, '14_extdata_gap_map.py',          'Extended Data Fig 2: geographic map (optional geopandas)', True,  []),
+    (16, '14_extdata_gap_map.py',          'Extended Data Fig 2: geographic map',                    False, []),
     (17, '15_extdata_spatial.py',          'Extended Data Fig 3: spatial dynamics by archetype',    False, []),
+    # --- Validation (step 18) ---
+    (18, '16_validation_suite.py',         'Validation suite: 1,704 classification test cases',    False, []),
 ]
 
 
@@ -62,12 +65,18 @@ def check_data():
 
 
 def run_step(step_num, filename, description, is_optional, extra_args=None):
-    """Run a single pipeline step as a subprocess."""
+    """Run a single pipeline step as a subprocess.
+
+    Returns (status, elapsed) where status is 'PASSED', 'FAILED' or 'SKIPPED'.
+    SKIPPED is reserved for a step marked optional that did not succeed; it is
+    reported and counted separately from PASSED so an absent artifact can never
+    be reported as a successful run.
+    """
     script_path = os.path.join(CODE_DIR, filename)
 
     if not os.path.exists(script_path):
         print(f"  WARNING: Script not found: {script_path}")
-        return False, 0
+        return 'FAILED', 0
 
     print(f"\n{'='*70}")
     print(f"  Step {step_num:02d}: {description}")
@@ -88,28 +97,28 @@ def run_step(step_num, filename, description, is_optional, extra_args=None):
 
         if result.returncode == 0:
             print(f"\n  PASSED ({elapsed:.1f}s)")
-            return True, elapsed
+            return 'PASSED', elapsed
         else:
             if is_optional:
                 print(f"\n  SKIPPED (optional step, returned code {result.returncode}) ({elapsed:.1f}s)")
-                return True, elapsed
+                return 'SKIPPED', elapsed
             else:
                 print(f"\n  FAILED (exit code {result.returncode}) ({elapsed:.1f}s)")
-                return False, elapsed
+                return 'FAILED', elapsed
 
     except subprocess.TimeoutExpired:
         elapsed = time.time() - t0
         print(f"\n  TIMEOUT after {elapsed:.1f}s")
-        return False, elapsed
+        return 'FAILED', elapsed
     except Exception as e:
         elapsed = time.time() - t0
         print(f"\n  ERROR: {e} ({elapsed:.1f}s)")
-        return False, elapsed
+        return 'FAILED', elapsed
 
 
 def main():
     parser = argparse.ArgumentParser(description='Run Paper 1A analysis pipeline')
-    parser.add_argument('--step', type=int, help='Run only this step number (1-17)')
+    parser.add_argument('--step', type=int, help='Run only this step number (1-18)')
     parser.add_argument('--analysis-only', action='store_true',
                         help='Run analysis steps only (01-10)')
     parser.add_argument('--figures-only', action='store_true',
@@ -128,12 +137,12 @@ def main():
     if args.step:
         steps_to_run = [s for s in STEPS if s[0] == args.step]
         if not steps_to_run:
-            print(f"\nERROR: Step {args.step} not found. Valid steps: 1-17")
+            print(f"\nERROR: Step {args.step} not found. Valid steps: 1-18")
             sys.exit(1)
     elif args.analysis_only:
         steps_to_run = [s for s in STEPS if s[0] <= 10]
     elif args.figures_only:
-        steps_to_run = [s for s in STEPS if s[0] >= 11]
+        steps_to_run = [s for s in STEPS if 11 <= s[0] <= 17]
     else:
         steps_to_run = STEPS
 
@@ -143,28 +152,37 @@ def main():
     total_start = time.time()
     results = []
     for step_num, filename, description, is_optional, extra_args in steps_to_run:
-        passed, elapsed = run_step(step_num, filename, description, is_optional, extra_args)
-        results.append((step_num, filename, passed, elapsed))
+        status, elapsed = run_step(step_num, filename, description, is_optional, extra_args)
+        results.append((step_num, filename, status, elapsed))
 
     # Summary
     total_elapsed = time.time() - total_start
-    n_passed = sum(1 for _, _, p, _ in results if p)
-    n_failed = sum(1 for _, _, p, _ in results if not p)
+    n_passed = sum(1 for _, _, s, _ in results if s == 'PASSED')
+    n_failed = sum(1 for _, _, s, _ in results if s == 'FAILED')
+    n_skipped = sum(1 for _, _, s, _ in results if s == 'SKIPPED')
 
     print(f"\n{'='*70}")
     print(f"  PIPELINE SUMMARY")
     print(f"{'='*70}")
     print(f"\n  {'Step':<6} {'Status':<10} {'Time':>8}  Description")
     print(f"  {'-'*60}")
-    for step_num, filename, passed, elapsed in results:
-        status = "PASSED" if passed else "FAILED"
+    for step_num, filename, status, elapsed in results:
         desc = next(d for s, _, d, _, _ in STEPS if s == step_num)
         print(f"  {step_num:02d}     {status:<10} {elapsed:>7.1f}s  {desc}")
 
-    print(f"\n  Total: {n_passed} passed, {n_failed} failed ({total_elapsed:.0f}s)")
+    print(f"\n  Total: {n_passed} passed, {n_failed} failed, "
+          f"{n_skipped} skipped ({total_elapsed:.0f}s)")
 
     if n_failed > 0:
         print(f"\n  WARNING: {n_failed} step(s) failed. Check output above for details.")
+        sys.exit(1)
+    elif n_skipped > 0:
+        print(f"\n  INCOMPLETE: {n_skipped} optional step(s) did not run. "
+              f"Their outputs are ABSENT — this is not a full reproduction.")
+        for step_num, _, status, _ in results:
+            if status == 'SKIPPED':
+                desc = next(d for s, _, d, _, _ in STEPS if s == step_num)
+                print(f"    - Step {step_num:02d}: {desc}")
         sys.exit(1)
     else:
         print(f"\n  All steps completed successfully!")

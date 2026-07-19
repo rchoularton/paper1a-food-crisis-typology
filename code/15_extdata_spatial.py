@@ -22,7 +22,9 @@ Source (canonical per-episode):
   outputs/data/r1_spatial_extent_by_episode.csv     (net_ratio)
   outputs/data/r1_spatial_adjacency_by_episode.csv  (co_escalation_net)
 
-Output: outputs/figures/ExtDataFig_spatial_dynamics.png / .pdf  (PNG + PDF only)
+Outputs:
+  outputs/figures/ExtDataFig_spatial_dynamics.png / .pdf
+  outputs/figures/SourceData_EDFig3.xlsx            (source data)
 """
 
 import csv
@@ -32,6 +34,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PACKAGE_ROOT = SCRIPT_DIR.parent  # code/code -> capsule root (papers/paper1/code/)
@@ -64,6 +67,32 @@ def _by_archetype(path, value_col):
         if v not in ('', 'nan', 'NA', None):
             g[r['archetype']].append(float(v))
     return g
+
+
+def export_source_data(order, fp_med, co_med, co_mean, n):
+    """Export source data for Extended Data Figure 3 to Excel."""
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    xlsx_path = FIG_DIR / 'SourceData_EDFig3.xlsx'
+
+    # Panel a: net national footprint ratio (median end/onset areas in crisis)
+    panel_a = pd.DataFrame({
+        'archetype': [LABELS[a] for a in order],
+        'net_footprint_ratio_median': [round(fp_med[a], 4) for a in order],
+        'n_episodes': [n[a] for a in order],
+    })
+
+    # Panel b: net neighbour co-escalation, median bars + mean diamonds
+    panel_b = pd.DataFrame({
+        'archetype': [LABELS[a] for a in order],
+        'co_escalation_net_median': [round(co_med[a], 4) for a in order],
+        'co_escalation_net_mean': [round(co_mean[a], 4) for a in order],
+        'n_episodes': [n[a] for a in order],
+    })
+
+    with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+        panel_a.to_excel(writer, sheet_name='panel_a_footprint', index=False)
+        panel_b.to_excel(writer, sheet_name='panel_b_co_escalation', index=False)
+    print(f"Saved: {xlsx_path}")
 
 
 def main():
@@ -124,6 +153,8 @@ def main():
     for ext_ in ('png', 'pdf'):
         fig.savefig(FIG_DIR / f'ExtDataFig_spatial_dynamics.{ext_}', bbox_inches='tight')
     print(f"Saved ExtDataFig_spatial_dynamics.png / .pdf to {FIG_DIR}")
+
+    export_source_data(order, fp_med, co_med, co_mean, n)
 
 
 if __name__ == '__main__':
