@@ -6,7 +6,7 @@
 
 **Journal:** Nature Food
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18954539.svg)](https://doi.org/10.5281/zenodo.18954539)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18954539.svg)](https://doi.org/10.5281/zenodo.18954539) *(concept DOI, all versions — this release: [10.5281/zenodo.21447762](https://doi.org/10.5281/zenodo.21447762), v1.3.0)*
 
 ---
 
@@ -246,8 +246,9 @@ If you use this code, please cite both the paper and this repository:
   title={paper1a-food-crisis-typology: Reproducibility package for Reimagining Food Crises},
   author={Choularton, Richard and Krishnamurthy, Krishna and Bauer, Jean Martin and Becker, Per},
   year={2026},
+  version={1.3.0},
   url={https://github.com/rchoularton/paper1a-food-crisis-typology},
-  doi={10.5281/zenodo.18954539}
+  doi={10.5281/zenodo.21447762}
 }
 ```
 
