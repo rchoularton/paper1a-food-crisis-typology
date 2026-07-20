@@ -1,7 +1,7 @@
 {
   "title": "paper1a-food-crisis-typology: Reproducibility package for Reimagining Food Crises",
   "description": "Code to reproduce all analyses and figures in 'Reimagining Food Crises: Archetypes, Collapsing Recovery Gaps, Crisis Staircases, and Recovery Traps'. Starting from the Harmonized Food Insecurity Dataset (HFID v1.1.1, which spans 2007-2024), the pipeline detects 1,658 food security crisis episodes across 49 countries (2011-2024), classifies them into eight archetypes, computes monthly IPC phase transition matrices with bootstrap confidence intervals, and generates all publication figures. Version 1.2.0 adds the revision robustness and spatial analyses requested by reviewers: a leave-one-country-out jackknife (Extended Data Table 6), national crisis footprint and neighbour co-escalation by archetype (Extended Data Fig. 3), and source-mix and admin1/admin2 unit composition. Version 1.2.1 restores MEAN aggregation to the sensitivity analysis (10 variants), adds the block bootstrap and both classification threshold sensitivity tests, ships the 1,704-case validation suite, and adds Source Data for Extended Data Fig. 3.",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "upload_type": "software",
   "publication_type": "softwaredocumentation",
   "creators": [
